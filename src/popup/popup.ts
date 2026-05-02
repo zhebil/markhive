@@ -99,7 +99,7 @@ async function handleExport(chatId: string): Promise<void> {
   try {
     response = (await chrome.runtime.sendMessage({ kind: "export", chatId })) as ExportResponse;
   } catch {
-    showToast("Couldn't reach claude.ai. Check your connection.", "error");
+    showToast(mapErrorCode("network"), "error");
     elExport.disabled = false;
     return;
   }
