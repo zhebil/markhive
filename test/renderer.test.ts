@@ -109,6 +109,15 @@ test("render: attachment placeholder appears before message text", () => {
   assert.ok(attPos < textPos, "attachment placeholder comes before message text");
 });
 
+test("render: tool_result resolves tool name from a different message", () => {
+  const conv = fixture("with-cross-message-tools");
+  const out = render(conv, { ...defaultOpts, includeToolResults: true });
+  assert.ok(
+    out.includes("> **Tool result: get_weather**"),
+    "should resolve tool name across messages (not fall back to tool_use_id)"
+  );
+});
+
 test("render: unknown block renders as HTML comment and does not throw", () => {
   const conv = fixture("with-unknown");
   let out: string;

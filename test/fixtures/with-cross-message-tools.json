@@ -1,0 +1,37 @@
+{
+  "uuid": "cccc1234-5678-90ab-cdef-1234567890ab",
+  "name": "Cross-message tool example",
+  "model": "claude-opus-4-5",
+  "created_at": "2026-05-01T10:00:00Z",
+  "chat_messages": [
+    {
+      "sender": "human",
+      "content": [{ "type": "text", "text": "What is the weather?" }]
+    },
+    {
+      "sender": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "cross-tool-1",
+          "name": "get_weather",
+          "input": { "location": "London" }
+        }
+      ]
+    },
+    {
+      "sender": "human",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "cross-tool-1",
+          "content": [{ "type": "text", "text": "Sunny, 22°C" }]
+        }
+      ]
+    },
+    {
+      "sender": "assistant",
+      "content": [{ "type": "text", "text": "It is sunny and 22°C in London." }]
+    }
+  ]
+}

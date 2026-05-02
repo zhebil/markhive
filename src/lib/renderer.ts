@@ -22,8 +22,10 @@ export function render(conv: Conversation, opts: RenderOptions): string {
     parts.push(renderFrontmatter(conv, opts));
   }
 
+  const toolUseMap = buildToolUseMap(conv);
+
   for (const msg of conv.chat_messages) {
-    parts.push(renderMessage(msg, opts));
+    parts.push(renderMessage(msg, opts, toolUseMap));
   }
 
   return parts.join("\n");
@@ -43,7 +45,7 @@ function renderFrontmatter(conv: Conversation, opts: RenderOptions): string {
   ].join("\n");
 }
 
-function renderMessage(msg: ChatMessage, opts: RenderOptions): string {
+function renderMessage(msg: ChatMessage, opts: RenderOptions, toolUseMap: Map<string, string>): string {
   const heading = msg.sender === "human" ? "## User" : "## Assistant";
   const lines: string[] = [heading, ""];
 
@@ -53,8 +55,6 @@ function renderMessage(msg: ChatMessage, opts: RenderOptions): string {
     }
     lines.push("");
   }
-
-  const toolUseMap = buildToolUseMap(msg);
 
   for (const block of msg.content) {
     const rendered = renderBlock(block, opts, toolUseMap);
@@ -67,12 +67,14 @@ function renderMessage(msg: ChatMessage, opts: RenderOptions): string {
   return lines.join("\n");
 }
 
-function buildToolUseMap(msg: ChatMessage): Map<string, string> {
+function buildToolUseMap(conv: Conversation): Map<string, string> {
   const map = new Map<string, string>();
-  for (const block of msg.content) {
-    if (block.type === "tool_use") {
-      const b = block as ToolUseBlock;
-      map.set(b.id, b.name);
+  for (const msg of conv.chat_messages) {
+    for (const block of msg.content) {
+      if (block.type === "tool_use") {
+        const b = block as ToolUseBlock;
+        map.set(b.id, b.name);
+      }
     }
   }
   return map;
