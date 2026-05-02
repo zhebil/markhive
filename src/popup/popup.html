@@ -31,10 +31,12 @@
         <span>Include tool results</span>
       </label>
 
-      <label class="option-row option-row-text">
-        <span class="option-label">Download subfolder</span>
-        <input type="text" id="opt-subfolder" placeholder="e.g. claude-exports" autocomplete="off" spellcheck="false">
-      </label>
+      <div class="option-row option-row-text">
+        <span class="option-label">Save to</span>
+        <span id="folder-name" class="folder-name">Downloads (default)</span>
+        <button id="btn-choose-folder" class="btn-mini" type="button">Choose…</button>
+        <button id="btn-reset-folder" class="btn-mini btn-mini-secondary hidden" type="button">Reset</button>
+      </div>
     </div>
 
     <div class="actions">

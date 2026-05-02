@@ -3,6 +3,13 @@ import { loadSettings, saveSettings } from "../lib/settings.ts";
 import { render } from "../lib/renderer.ts";
 import { buildFilename } from "../lib/filename.ts";
 import { fetchConversationFromCache } from "../lib/idb-cache.ts";
+import {
+  loadDirectoryHandle,
+  saveDirectoryHandle,
+  clearDirectoryHandle,
+  ensureWritePermission,
+  writeFileToDirectory,
+} from "../lib/fs-handle.ts";
 import type { Conversation } from "../lib/types.ts";
 import type { RenderOptions } from "../lib/renderer.ts";
 
@@ -11,7 +18,9 @@ const elFrontmatter = document.getElementById("opt-frontmatter") as HTMLInputEle
 const elThinking = document.getElementById("opt-thinking") as HTMLInputElement;
 const elToolInputs = document.getElementById("opt-tool-inputs") as HTMLInputElement;
 const elToolResults = document.getElementById("opt-tool-results") as HTMLInputElement;
-const elSubfolder = document.getElementById("opt-subfolder") as HTMLInputElement;
+const elFolderName = document.getElementById("folder-name") as HTMLSpanElement;
+const elChooseFolder = document.getElementById("btn-choose-folder") as HTMLButtonElement;
+const elResetFolder = document.getElementById("btn-reset-folder") as HTMLButtonElement;
 const elGenerate = document.getElementById("btn-generate") as HTMLButtonElement;
 const elPreviewRegion = document.getElementById("preview-region") as HTMLDivElement;
 const elPreviewSource = document.getElementById("preview-source") as HTMLSpanElement;
@@ -35,6 +44,7 @@ type CachedExport = {
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
 let activeTabId: number | null = null;
 let currentFilename = "export.md";
+let downloadDir: FileSystemDirectoryHandle | null = null;
 
 function showToast(text: string, kind: "info" | "error"): void {
   if (toastTimer !== null) {
@@ -76,14 +86,46 @@ function mapErrorCode(code: string, status?: number): string {
   }
 }
 
-function sanitizeSubfolder(input: string): string {
-  // Keep it relative under Downloads. Strip leading/trailing slashes,
-  // collapse repeats, drop characters Chrome will reject in filenames.
-  return input
-    .trim()
-    .replace(/[\\:*?"<>|]/g, "")
-    .replace(/\/+/g, "/")
-    .replace(/^\/+|\/+$/g, "");
+function updateFolderUi(): void {
+  if (downloadDir) {
+    elFolderName.textContent = downloadDir.name;
+    elFolderName.title = downloadDir.name;
+    elResetFolder.classList.remove("hidden");
+  } else {
+    elFolderName.textContent = "Downloads (default)";
+    elFolderName.title = "";
+    elResetFolder.classList.add("hidden");
+  }
+}
+
+async function handleChooseFolder(): Promise<void> {
+  if (typeof window.showDirectoryPicker !== "function") {
+    showToast("Folder picker not supported by this browser.", "error");
+    return;
+  }
+  try {
+    const handle = await window.showDirectoryPicker({ mode: "readwrite", id: "markhive-export" });
+    const granted = await ensureWritePermission(handle);
+    if (!granted) {
+      showToast("Folder access denied.", "error");
+      return;
+    }
+    await saveDirectoryHandle(handle);
+    downloadDir = handle;
+    updateFolderUi();
+    showToast(`Saving to "${handle.name}".`, "info");
+  } catch (err) {
+    if ((err as { name?: string }).name === "AbortError") return;
+    console.error("Markhive: folder pick failed", err);
+    showToast("Couldn't pick folder.", "error");
+  }
+}
+
+async function handleResetFolder(): Promise<void> {
+  await clearDirectoryHandle();
+  downloadDir = null;
+  updateFolderUi();
+  showToast("Reverted to default Downloads.", "info");
 }
 
 async function readCachedExport(): Promise<CachedExport | null> {
@@ -129,7 +171,14 @@ async function init(): Promise<void> {
   elThinking.checked = settings.includeThinking;
   elToolInputs.checked = settings.includeToolInputs;
   elToolResults.checked = settings.includeToolResults;
-  elSubfolder.value = settings.downloadSubfolder;
+
+  try {
+    downloadDir = await loadDirectoryHandle();
+  } catch (err) {
+    console.warn("Markhive: failed to load saved folder handle", err);
+    downloadDir = null;
+  }
+  updateFolderUi();
 
   if (chatId !== null) {
     const cached = await readCachedExport();
@@ -153,7 +202,15 @@ async function init(): Promise<void> {
   });
 
   elDownload.addEventListener("click", () => {
-    handleDownload();
+    void handleDownload();
+  });
+
+  elChooseFolder.addEventListener("click", () => {
+    void handleChooseFolder();
+  });
+
+  elResetFolder.addEventListener("click", () => {
+    void handleResetFolder();
   });
 }
 
@@ -169,7 +226,6 @@ async function handleGenerate(chatId: string): Promise<void> {
       includeToolInputs: elToolInputs.checked,
       includeToolResults: elToolResults.checked,
       filenameTemplate: "date-title" as const,
-      downloadSubfolder: sanitizeSubfolder(elSubfolder.value),
     };
 
     await saveSettings(settings);
@@ -255,14 +311,29 @@ async function handleCopy(): Promise<void> {
   }
 }
 
-function handleDownload(): void {
+async function handleDownload(): Promise<void> {
   const text = elPreviewTextarea.value;
-  const subfolder = sanitizeSubfolder(elSubfolder.value);
-  const filename = subfolder ? `${subfolder}/${currentFilename}` : currentFilename;
+
+  if (downloadDir) {
+    try {
+      const granted = await ensureWritePermission(downloadDir);
+      if (!granted) {
+        showToast("Folder permission denied. Falling back to Downloads.", "error");
+      } else {
+        await writeFileToDirectory(downloadDir, currentFilename, text);
+        showToast(`Saved to ${downloadDir.name}/${currentFilename}.`, "info");
+        return;
+      }
+    } catch (err) {
+      console.error("Markhive: write to chosen folder failed", err);
+      showToast(`Couldn't write to ${downloadDir.name}. Falling back to Downloads.`, "error");
+    }
+  }
+
   const blob = new Blob([text], { type: "text/markdown" });
   const blobUrl = URL.createObjectURL(blob);
 
-  chrome.downloads.download({ url: blobUrl, filename, saveAs: false }, (downloadId) => {
+  chrome.downloads.download({ url: blobUrl, filename: currentFilename, saveAs: false }, (downloadId) => {
     if (chrome.runtime.lastError) {
       URL.revokeObjectURL(blobUrl);
       showToast(`Download failed: ${chrome.runtime.lastError.message}`, "error");
