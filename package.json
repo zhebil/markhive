@@ -11,7 +11,8 @@
   },
   "devDependencies": {
     "@types/chrome": "^0.0.270",
-    "typescript": "^5.5.0",
-    "chokidar": "^3.6.0"
+    "@types/node": "^25.6.0",
+    "chokidar": "^3.6.0",
+    "typescript": "^5.5.0"
   }
 }
