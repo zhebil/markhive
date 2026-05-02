@@ -10,10 +10,16 @@ const elFrontmatter = document.getElementById("opt-frontmatter") as HTMLInputEle
 const elThinking = document.getElementById("opt-thinking") as HTMLInputElement;
 const elToolInputs = document.getElementById("opt-tool-inputs") as HTMLInputElement;
 const elToolResults = document.getElementById("opt-tool-results") as HTMLInputElement;
-const elExport = document.getElementById("btn-export") as HTMLButtonElement;
+const elGenerate = document.getElementById("btn-generate") as HTMLButtonElement;
+const elPreviewRegion = document.getElementById("preview-region") as HTMLDivElement;
+const elPreviewTextarea = document.getElementById("preview-textarea") as HTMLTextAreaElement;
+const elCopy = document.getElementById("btn-copy") as HTMLButtonElement;
+const elDownload = document.getElementById("btn-download") as HTMLButtonElement;
 const elToast = document.getElementById("toast") as HTMLDivElement;
 
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
+// Filename derived during Generate; used by Download
+let currentFilename = "export.md";
 
 function showToast(text: string, kind: "info" | "error"): void {
   if (toastTimer !== null) {
@@ -61,7 +67,7 @@ async function init(): Promise<void> {
   const chatId = parseChatId(url);
 
   if (chatId === null) {
-    elExport.disabled = true;
+    elGenerate.disabled = true;
     showToast("Open a Claude conversation to export.", "error");
   }
 
@@ -71,15 +77,23 @@ async function init(): Promise<void> {
   elToolInputs.checked = settings.includeToolInputs;
   elToolResults.checked = settings.includeToolResults;
 
-  elExport.addEventListener("click", () => {
+  elGenerate.addEventListener("click", () => {
     if (chatId === null) return;
-    void handleExport(chatId);
+    void handleGenerate(chatId);
+  });
+
+  elCopy.addEventListener("click", () => {
+    void handleCopy();
+  });
+
+  elDownload.addEventListener("click", () => {
+    handleDownload();
   });
 }
 
-async function handleExport(chatId: string): Promise<void> {
+async function handleGenerate(chatId: string): Promise<void> {
   hideToast();
-  elExport.disabled = true;
+  elGenerate.disabled = true;
 
   const settings = {
     includeFrontmatter: elFrontmatter.checked,
@@ -100,13 +114,13 @@ async function handleExport(chatId: string): Promise<void> {
     response = (await chrome.runtime.sendMessage({ kind: "export", chatId })) as ExportResponse;
   } catch {
     showToast(mapErrorCode("network"), "error");
-    elExport.disabled = false;
+    elGenerate.disabled = false;
     return;
   }
 
   if (!response.ok) {
     showToast(mapErrorCode(response.error.code, response.error.status), "error");
-    elExport.disabled = false;
+    elGenerate.disabled = false;
     return;
   }
 
@@ -125,12 +139,32 @@ async function handleExport(chatId: string): Promise<void> {
   }
 
   const markdown = render(conv, opts);
-  const filename = buildFilename(conv);
+  currentFilename = buildFilename(conv);
 
-  const blob = new Blob([markdown], { type: "text/markdown" });
+  // Populate textarea and reveal preview region
+  elPreviewTextarea.value = markdown;
+  elPreviewRegion.classList.remove("hidden");
+
+  elGenerate.disabled = false;
+}
+
+async function handleCopy(): Promise<void> {
+  const text = elPreviewTextarea.value;
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast("Copied.", "info");
+  } catch {
+    showToast("Copy failed. Try selecting and copying manually.", "error");
+  }
+}
+
+function handleDownload(): void {
+  // Read from textarea so any user edits are honored
+  const text = elPreviewTextarea.value;
+  const blob = new Blob([text], { type: "text/markdown" });
   const blobUrl = URL.createObjectURL(blob);
 
-  chrome.downloads.download({ url: blobUrl, filename, saveAs: false }, (downloadId) => {
+  chrome.downloads.download({ url: blobUrl, filename: currentFilename, saveAs: false }, (downloadId) => {
     const fallbackTimer = setTimeout(() => {
       URL.revokeObjectURL(blobUrl);
       chrome.downloads.onChanged.removeListener(onChanged);
@@ -147,8 +181,7 @@ async function handleExport(chatId: string): Promise<void> {
     chrome.downloads.onChanged.addListener(onChanged);
   });
 
-  showToast("Exported successfully.", "info");
-  elExport.disabled = false;
+  showToast("Downloaded.", "info");
 }
 
 void init();

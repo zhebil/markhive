@@ -41,7 +41,7 @@ body {
   font-size: 14px;
   background: var(--bg);
   color: var(--text);
-  width: 340px;
+  width: 480px;
 }
 
 #app {
@@ -107,7 +107,7 @@ header {
   padding: 10px 16px 12px;
 }
 
-#btn-export {
+#btn-generate {
   width: 100%;
   padding: 8px 0;
   background: var(--accent);
@@ -120,11 +120,71 @@ header {
   transition: background 0.15s;
 }
 
-#btn-export:hover:not(:disabled) {
+#btn-generate:hover:not(:disabled) {
   background: var(--accent-hover);
 }
 
-#btn-export:disabled {
+#btn-generate:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.preview-region {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px 12px;
+}
+
+.preview-region.hidden {
+  display: none;
+}
+
+#preview-textarea {
+  width: 100%;
+  height: 360px;
+  max-height: 360px;
+  padding: 8px 10px;
+  font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+#preview-textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.preview-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.preview-actions button {
+  flex: 1;
+  padding: 7px 0;
+  background: var(--accent);
+  color: var(--btn-text);
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.preview-actions button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.preview-actions button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }

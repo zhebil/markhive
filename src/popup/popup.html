@@ -33,7 +33,15 @@
     </div>
 
     <div class="actions">
-      <button id="btn-export">Export</button>
+      <button id="btn-generate">Generate</button>
+    </div>
+
+    <div id="preview-region" class="preview-region hidden">
+      <textarea id="preview-textarea" spellcheck="false" aria-label="Rendered markdown"></textarea>
+      <div class="preview-actions">
+        <button id="btn-copy">Copy</button>
+        <button id="btn-download">Download</button>
+      </div>
     </div>
 
     <div id="toast" class="toast hidden" role="status"></div>
