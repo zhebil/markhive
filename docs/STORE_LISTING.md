@@ -123,13 +123,13 @@ Then check:
 - [x] I do not use or transfer user data for purposes unrelated to the item's single purpose
 - [x] I do not use or transfer user data to determine creditworthiness or for lending purposes
 
-Privacy policy URL:
+Privacy policy URL: pending. Before submitting, make the repo public and use:
 
 ```
-https://gist.github.com/zhebil/3b427e882c89bf109a1c7ae6c4c9d0a3
+https://github.com/zhebil/markhive/blob/main/PRIVACY.md
 ```
 
-(Public gist - update with `gh gist edit 3b427e882c89bf109a1c7ae6c4c9d0a3 PRIVACY.md` whenever `PRIVACY.md` in the repo changes.)
+(Or, if you want to keep the repo private, run `gh gist create PRIVACY.md --public --desc "Markhive privacy policy"` and use the gist URL.)
 
 ---
 
