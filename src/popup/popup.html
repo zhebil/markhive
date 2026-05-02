@@ -7,6 +7,38 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
+  <div id="app">
+    <header>
+      <span class="logo">Markhive</span>
+      <span id="chat-title" class="chat-title" title=""></span>
+    </header>
+
+    <div class="options">
+      <label class="option-row">
+        <input type="checkbox" id="opt-frontmatter">
+        <span>Include frontmatter</span>
+      </label>
+      <label class="option-row">
+        <input type="checkbox" id="opt-thinking">
+        <span>Include thinking</span>
+      </label>
+      <label class="option-row">
+        <input type="checkbox" id="opt-tool-inputs">
+        <span>Include tool inputs</span>
+      </label>
+      <label class="option-row">
+        <input type="checkbox" id="opt-tool-results">
+        <span>Include tool results</span>
+      </label>
+    </div>
+
+    <div class="actions">
+      <button id="btn-export">Export</button>
+    </div>
+
+    <div id="toast" class="toast hidden" role="status"></div>
+  </div>
+
   <script type="module" src="popup.js"></script>
 </body>
 </html>

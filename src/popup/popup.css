@@ -1,5 +1,152 @@
+:root {
+  --bg: #ffffff;
+  --bg-header: #f5f5f5;
+  --text: #1a1a1a;
+  --text-muted: #666666;
+  --border: #e0e0e0;
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --btn-text: #ffffff;
+  --toast-error-bg: #fef2f2;
+  --toast-error-text: #991b1b;
+  --toast-info-bg: #f0fdf4;
+  --toast-info-text: #166534;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1e1e1e;
+    --bg-header: #2a2a2a;
+    --text: #e8e8e8;
+    --text-muted: #999999;
+    --border: #3a3a3a;
+    --accent: #a78bfa;
+    --accent-hover: #8b5cf6;
+    --btn-text: #1a1a1a;
+    --toast-error-bg: #2d1515;
+    --toast-error-text: #fca5a5;
+    --toast-info-bg: #0f2a1a;
+    --toast-info-text: #86efac;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   padding: 0;
-  font-family: system-ui, sans-serif;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  background: var(--bg);
+  color: var(--text);
+  width: 340px;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 16px 10px;
+  background: var(--bg-header);
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--accent);
+}
+
+.chat-title {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  min-height: 16px;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 16px;
+  gap: 0;
+}
+
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+
+.option-row:last-child {
+  border-bottom: none;
+}
+
+.option-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.actions {
+  padding: 10px 16px 12px;
+}
+
+#btn-export {
+  width: 100%;
+  padding: 8px 0;
+  background: var(--accent);
+  color: var(--btn-text);
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+#btn-export:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+#btn-export:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.toast {
+  margin: 0 16px 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.toast.hidden {
+  display: none;
+}
+
+.toast.error {
+  background: var(--toast-error-bg);
+  color: var(--toast-error-text);
+}
+
+.toast.info {
+  background: var(--toast-info-bg);
+  color: var(--toast-info-text);
 }
