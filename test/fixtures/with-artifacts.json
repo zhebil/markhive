@@ -1,0 +1,25 @@
+{
+  "uuid": "cccc1234-5678-90ab-cdef-1234567890ab",
+  "name": "Artifacts example",
+  "model": "claude-opus-4-5",
+  "created_at": "2026-05-01T10:00:00Z",
+  "chat_messages": [
+    {
+      "sender": "human",
+      "content": [{ "type": "text", "text": "Write me a Python function." }]
+    },
+    {
+      "sender": "assistant",
+      "content": [
+        { "type": "text", "text": "Here is the function:" },
+        {
+          "type": "tool_use_artifact",
+          "id": "artifact-1",
+          "title": "hello_world.py",
+          "language": "python",
+          "content": "def hello():\n    return 'Hello, world!'"
+        }
+      ]
+    }
+  ]
+}

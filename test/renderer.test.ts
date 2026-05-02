@@ -91,3 +91,11 @@ test("render: both tools omitted when both toggles off", () => {
   assert.ok(!out.includes("> **Tool result:"), "should omit tool result");
   assert.ok(out.includes("Here are the results."), "should include text");
 });
+
+test("render: artifact appears regardless of tool toggles", () => {
+  const conv = fixture("with-artifacts");
+  const out = render(conv, { ...defaultOpts, includeToolInputs: false, includeToolResults: false });
+  assert.ok(out.includes("### hello_world.py"), "should have H3 artifact title");
+  assert.ok(out.includes("```python"), "should have fenced code block with language");
+  assert.ok(out.includes("def hello():"), "should include artifact content");
+});
