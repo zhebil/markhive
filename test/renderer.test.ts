@@ -32,3 +32,10 @@ test("render: text messages with frontmatter", () => {
   const userPos = out.indexOf("## User");
   assert.ok(fmStart < fmEnd && fmEnd < userPos, "frontmatter comes before User section");
 });
+
+test("render: no frontmatter when includeFrontmatter is false", () => {
+  const conv = fixture("simple-text");
+  const out = render(conv, { ...defaultOpts, includeFrontmatter: false });
+  assert.ok(!out.includes("---"), "should not have --- delimiter");
+  assert.ok(out.includes("## User"), "should still have User heading");
+});
