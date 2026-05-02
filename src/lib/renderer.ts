@@ -78,6 +78,10 @@ function buildToolUseMap(msg: ChatMessage): Map<string, string> {
   return map;
 }
 
+function toBlockquote(text: string): string {
+  return text.split("\n").map((l) => `> ${l}`).join("\n");
+}
+
 function renderBlock(
   block: ContentBlock,
   opts: RenderOptions,
@@ -102,16 +106,12 @@ function renderBlock(
 
     case "thinking": {
       if (!opts.includeThinking) return null;
-      const lines = (b.thinking ?? "").split("\n").map((l) => `> ${l}`);
-      return `> **Thinking**\n${lines.join("\n")}`;
+      return `> **Thinking**\n${toBlockquote(b.thinking ?? "")}`;
     }
 
     case "tool_use": {
       if (!opts.includeToolInputs) return null;
-      const json = JSON.stringify(b.input, null, 2)
-        .split("\n")
-        .map((l) => `> ${l}`)
-        .join("\n");
+      const json = toBlockquote(JSON.stringify(b.input, null, 2));
       return `> **Tool call: ${b.name}**\n> \`\`\`json\n${json}\n> \`\`\``;
     }
 
@@ -122,8 +122,7 @@ function renderBlock(
       const textParts = toolResultBlock.content
         .map((c) => (c.type === "text" ? c.text : JSON.stringify(c)))
         .join("\n");
-      const body = textParts.split("\n").map((l) => `> ${l}`).join("\n");
-      return `> **Tool result: ${name}**\n> \`\`\`\n${body}\n> \`\`\``;
+      return `> **Tool result: ${name}**\n> \`\`\`\n${toBlockquote(textParts)}\n> \`\`\``;
     }
 
     case "tool_use_artifact": {
@@ -131,11 +130,7 @@ function renderBlock(
       return `### ${artBlock.title}\n\n\`\`\`${artBlock.language}\n${artBlock.content}\n\`\`\``;
     }
 
-    case "image":
-      return `<!-- unsupported block: image -->`;
-
-    default: {
+    default:
       return `<!-- unsupported block: ${b.type} -->`;
-    }
   }
 }
