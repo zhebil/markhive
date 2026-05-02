@@ -95,57 +95,60 @@ async function handleGenerate(chatId: string): Promise<void> {
   hideToast();
   elGenerate.disabled = true;
 
-  const settings = {
-    includeFrontmatter: elFrontmatter.checked,
-    includeThinking: elThinking.checked,
-    includeToolInputs: elToolInputs.checked,
-    includeToolResults: elToolResults.checked,
-    filenameTemplate: "date-title" as const,
-  };
-
-  await saveSettings(settings);
-
-  type ExportResponse =
-    | { ok: true; conversation: unknown }
-    | { ok: false; error: { code: string; status?: number } };
-
-  let response: ExportResponse;
   try {
-    response = (await chrome.runtime.sendMessage({ kind: "export", chatId })) as ExportResponse;
-  } catch {
-    showToast(mapErrorCode("network"), "error");
+    const settings = {
+      includeFrontmatter: elFrontmatter.checked,
+      includeThinking: elThinking.checked,
+      includeToolInputs: elToolInputs.checked,
+      includeToolResults: elToolResults.checked,
+      filenameTemplate: "date-title" as const,
+    };
+
+    await saveSettings(settings);
+
+    type ExportResponse =
+      | { ok: true; conversation: unknown }
+      | { ok: false; error: { code: string; status?: number } };
+
+    let response: ExportResponse;
+    try {
+      response = (await chrome.runtime.sendMessage({ kind: "export", chatId })) as ExportResponse;
+    } catch {
+      showToast(mapErrorCode("network"), "error");
+      return;
+    }
+
+    if (!response.ok) {
+      showToast(mapErrorCode(response.error.code, response.error.status), "error");
+      return;
+    }
+
+    const conv = response.conversation as Conversation;
+    const opts: RenderOptions = {
+      includeFrontmatter: settings.includeFrontmatter,
+      includeThinking: settings.includeThinking,
+      includeToolInputs: settings.includeToolInputs,
+      includeToolResults: settings.includeToolResults,
+      exportedAt: new Date().toISOString(),
+    };
+
+    if (conv.name) {
+      elChatTitle.textContent = conv.name;
+      elChatTitle.title = conv.name;
+    }
+
+    const markdown = render(conv, opts);
+    currentFilename = buildFilename(conv);
+
+    elPreviewTextarea.value = markdown;
+    elPreviewRegion.classList.remove("hidden");
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("Markhive generate failed:", err);
+    showToast(`Couldn't render conversation: ${message}`, "error");
+  } finally {
     elGenerate.disabled = false;
-    return;
   }
-
-  if (!response.ok) {
-    showToast(mapErrorCode(response.error.code, response.error.status), "error");
-    elGenerate.disabled = false;
-    return;
-  }
-
-  const conv = response.conversation as Conversation;
-  const opts: RenderOptions = {
-    includeFrontmatter: settings.includeFrontmatter,
-    includeThinking: settings.includeThinking,
-    includeToolInputs: settings.includeToolInputs,
-    includeToolResults: settings.includeToolResults,
-    exportedAt: new Date().toISOString(),
-  };
-
-  if (conv.name) {
-    elChatTitle.textContent = conv.name;
-    elChatTitle.title = conv.name;
-  }
-
-  const markdown = render(conv, opts);
-  currentFilename = buildFilename(conv);
-
-  // Populate textarea and reveal preview region
-  elPreviewTextarea.value = markdown;
-  elPreviewRegion.classList.remove("hidden");
-
-  elGenerate.disabled = false;
 }
 
 async function handleCopy(): Promise<void> {

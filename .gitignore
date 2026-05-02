@@ -6,3 +6,7 @@
 
 node_modules/
 dist/
+
+# Local test exports
+/*.md
+!/README.md

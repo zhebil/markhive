@@ -28,7 +28,8 @@ export function render(conv: Conversation, opts: RenderOptions): string {
 
   const toolUseMap = buildToolUseMap(conv);
 
-  for (const msg of conv.chat_messages) {
+  const messages = Array.isArray(conv.chat_messages) ? conv.chat_messages : [];
+  for (const msg of messages) {
     parts.push(renderMessage(msg, opts, toolUseMap));
   }
 
@@ -60,7 +61,8 @@ function renderMessage(msg: ChatMessage, opts: RenderOptions, toolUseMap: Map<st
     lines.push("");
   }
 
-  for (const block of msg.content) {
+  const content = Array.isArray(msg.content) ? msg.content : [];
+  for (const block of content) {
     const rendered = renderBlock(block, opts, toolUseMap);
     if (rendered !== null) {
       lines.push(rendered);
@@ -73,8 +75,10 @@ function renderMessage(msg: ChatMessage, opts: RenderOptions, toolUseMap: Map<st
 
 function buildToolUseMap(conv: Conversation): Map<string, string> {
   const map = new Map<string, string>();
-  for (const msg of conv.chat_messages) {
-    for (const block of msg.content) {
+  const messages = Array.isArray(conv.chat_messages) ? conv.chat_messages : [];
+  for (const msg of messages) {
+    const content = Array.isArray(msg.content) ? msg.content : [];
+    for (const block of content) {
       if (block.type === "tool_use") {
         const b = block as ToolUseBlock;
         map.set(b.id, b.name);
