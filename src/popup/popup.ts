@@ -130,9 +130,22 @@ async function handleExport(chatId: string): Promise<void> {
   const blob = new Blob([markdown], { type: "text/markdown" });
   const blobUrl = URL.createObjectURL(blob);
 
-  chrome.downloads.download({ url: blobUrl, filename, saveAs: false });
+  chrome.downloads.download({ url: blobUrl, filename, saveAs: false }, (downloadId) => {
+    const fallbackTimer = setTimeout(() => {
+      URL.revokeObjectURL(blobUrl);
+      chrome.downloads.onChanged.removeListener(onChanged);
+    }, 30_000);
 
-  setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    function onChanged(delta: chrome.downloads.DownloadDelta): void {
+      if (delta.id === downloadId && delta.state?.current === "complete") {
+        clearTimeout(fallbackTimer);
+        URL.revokeObjectURL(blobUrl);
+        chrome.downloads.onChanged.removeListener(onChanged);
+      }
+    }
+
+    chrome.downloads.onChanged.addListener(onChanged);
+  });
 
   showToast("Exported successfully.", "info");
   elExport.disabled = false;
