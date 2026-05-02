@@ -31,8 +31,8 @@ Markhive is not on the Chrome Web Store yet. Load it from source:
 |---|---|---|
 | Include frontmatter | On | Adds a YAML block at the top with title, chat ID, URL, model, and timestamps. |
 | Include thinking | Off | Renders extended thinking blocks as blockquotes labeled `**Thinking**`. |
-| Include tool inputs | Off | Renders tool-call inputs as fenced JSON blockquotes. |
-| Include tool results | Off | Renders tool results as fenced blockquotes. |
+| Include tool inputs | Off | Renders tool-call inputs as fenced JSON blockquotes when present. See limitations below. |
+| Include tool results | Off | Renders tool results as fenced blockquotes when present. See limitations below. |
 
 Settings are saved per browser profile via `chrome.storage.local` and restored on the next popup open.
 
@@ -47,6 +47,7 @@ Both calls use your existing session cookie. No data leaves your machine to any 
 
 ## Limitations
 
+- **Tool calls are not exported.** The `claude.ai` REST endpoint we use substitutes `tool_use`/`tool_result` blocks with a placeholder text on the server side; the structured tool data is only available over the live streaming channel. Markhive suppresses the placeholder so exports stay clean, but tool calls (e.g. web_search) will not appear in the markdown. Toggling "Include tool inputs/results" has no effect on conversations until this is solved (see roadmap).
 - **Single conversation per export** - bulk export is not supported in v1.
 - **Single org** - if your account has multiple orgs, v1 always picks the first one returned. If the conversation belongs to a different org, you will see an API error.
 - **Markdown only** - no HTML output in v1.

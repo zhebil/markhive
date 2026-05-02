@@ -178,3 +178,29 @@ test("render: H1 falls back to Untitled when conv.name is empty", () => {
   const out = render(conv, { ...defaultOpts, includeFrontmatter: false });
   assert.ok(out.includes("# Untitled"), "should fall back to Untitled H1 when name is empty");
 });
+
+test("render: API tool-block placeholder text is suppressed", () => {
+  const conv: Conversation = {
+    uuid: "bbbb0000-0000-0000-0000-000000000000",
+    name: "Tool placeholder filter",
+    model: "claude-opus-4-5",
+    created_at: "2026-01-01T00:00:00Z",
+    chat_messages: [
+      {
+        sender: "assistant",
+        content: [
+          { type: "text", text: "Here are the results:" } as any,
+          {
+            type: "text",
+            text: "\n```\nThis block is not supported on your current device yet.\n```\n",
+          } as any,
+          { type: "text", text: "And the answer is 42." } as any,
+        ],
+      },
+    ],
+  };
+  const out = render(conv, { ...defaultOpts, includeFrontmatter: false });
+  assert.ok(!out.includes("not supported on your current device"), "should drop placeholder block");
+  assert.ok(out.includes("Here are the results:"));
+  assert.ok(out.includes("And the answer is 42."));
+});

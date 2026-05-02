@@ -50,7 +50,7 @@ export async function fetchOrgId(): Promise<string> {
 }
 
 export async function fetchConversation(orgId: string, chatId: string): Promise<unknown> {
-  const url = `https://claude.ai/api/organizations/${orgId}/chat_conversations/${chatId}?tree=True&rendering_mode=raw`;
+  const url = `https://claude.ai/api/organizations/${orgId}/chat_conversations/${chatId}?tree=True&rendering_mode=messages`;
   const res = await claudeFetch(url);
   return res.json();
 }

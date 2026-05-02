@@ -111,8 +111,15 @@ function renderBlock(
   };
 
   switch (b.type) {
-    case "text":
-      return b.text ?? "";
+    case "text": {
+      const text = b.text ?? "";
+      // The /chat_conversations API substitutes tool_use blocks with a literal
+      // placeholder text block. Suppress it to keep exports clean.
+      if (text.includes("This block is not supported on your current device yet.")) {
+        return null;
+      }
+      return text;
+    }
 
     case "thinking": {
       if (!opts.includeThinking) return null;

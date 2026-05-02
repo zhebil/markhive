@@ -26,34 +26,6 @@ chrome.runtime.onMessage.addListener(
       try {
         const orgId = await fetchOrgId();
         const conversation = await fetchConversation(orgId, req.chatId);
-        const c = conversation as { chat_messages?: Array<Record<string, unknown>> };
-        console.log("Markhive: top-level conversation keys", Object.keys(conversation as object));
-        if (c.chat_messages?.[0]) {
-          console.log("Markhive: first message keys", Object.keys(c.chat_messages[0]));
-          console.log("Markhive: first message full", c.chat_messages[0]);
-        }
-        const allBlocks: Array<Record<string, unknown>> = [];
-        for (const m of c.chat_messages ?? []) {
-          if (Array.isArray(m.content)) {
-            for (const b of m.content as Array<Record<string, unknown>>) allBlocks.push(b);
-          }
-        }
-        const typeCounts: Record<string, number> = {};
-        for (const b of allBlocks) {
-          const t = String(b.type ?? "?");
-          typeCounts[t] = (typeCounts[t] ?? 0) + 1;
-        }
-        const samplesByType: Record<string, Record<string, unknown>> = {};
-        for (const b of allBlocks) {
-          const t = String(b.type ?? "?");
-          if (!samplesByType[t]) samplesByType[t] = b;
-        }
-        const fallbackHits = allBlocks.filter(
-          (b) => typeof b.text === "string" && (b.text as string).includes("not supported on your current device")
-        );
-        console.log("Markhive: block type counts", typeCounts);
-        console.log("Markhive: sample of each block type", samplesByType);
-        console.log("Markhive: blocks that contain the fallback text", fallbackHits);
         sendResponse({ ok: true, conversation });
       } catch (err) {
         if (err instanceof ClaudeAuthError) {
