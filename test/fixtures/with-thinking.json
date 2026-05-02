@@ -1,0 +1,19 @@
+{
+  "uuid": "aaaa1234-5678-90ab-cdef-1234567890ab",
+  "name": "Thinking example",
+  "model": "claude-opus-4-5",
+  "created_at": "2026-05-01T10:00:00Z",
+  "chat_messages": [
+    {
+      "sender": "human",
+      "content": [{ "type": "text", "text": "What is 2+2?" }]
+    },
+    {
+      "sender": "assistant",
+      "content": [
+        { "type": "thinking", "thinking": "Let me think...\nCarefully.\nOk it's 4." },
+        { "type": "text", "text": "The answer is 4." }
+      ]
+    }
+  ]
+}

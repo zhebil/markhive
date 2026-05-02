@@ -39,3 +39,21 @@ test("render: no frontmatter when includeFrontmatter is false", () => {
   assert.ok(!out.includes("---"), "should not have --- delimiter");
   assert.ok(out.includes("## User"), "should still have User heading");
 });
+
+test("render: thinking excluded when includeThinking is false", () => {
+  const conv = fixture("with-thinking");
+  const out = render(conv, { ...defaultOpts, includeThinking: false });
+  assert.ok(!out.includes("reasoning..."), "should not include thinking text");
+  assert.ok(out.includes("The answer is 4."), "should include text content");
+});
+
+test("render: thinking included when includeThinking is true", () => {
+  const conv = fixture("with-thinking");
+  const out = render(conv, { ...defaultOpts, includeThinking: true });
+  assert.ok(out.includes("> **Thinking**"), "should have thinking blockquote header");
+  assert.ok(out.includes("> Let me think..."), "should include thinking text lines");
+  assert.ok(out.includes("The answer is 4."), "should include text content");
+  const thinkPos = out.indexOf("> **Thinking**");
+  const textPos = out.indexOf("The answer is 4.");
+  assert.ok(thinkPos < textPos, "thinking comes before text");
+});
