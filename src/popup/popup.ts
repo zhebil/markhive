@@ -15,7 +15,7 @@ const elToast = document.getElementById("toast") as HTMLDivElement;
 
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
-function showToastRaw(text: string, kind: "info" | "error"): void {
+function showToast(text: string, kind: "info" | "error"): void {
   if (toastTimer !== null) {
     clearTimeout(toastTimer);
     toastTimer = null;
@@ -62,7 +62,7 @@ async function init(): Promise<void> {
 
   if (chatId === null) {
     elExport.disabled = true;
-    showToastRaw("Open a Claude conversation to export.", "error");
+    showToast("Open a Claude conversation to export.", "error");
   }
 
   const settings = await loadSettings();
@@ -99,13 +99,13 @@ async function handleExport(chatId: string): Promise<void> {
   try {
     response = (await chrome.runtime.sendMessage({ kind: "export", chatId })) as ExportResponse;
   } catch {
-    showToastRaw("Couldn't reach claude.ai. Check your connection.", "error");
+    showToast("Couldn't reach claude.ai. Check your connection.", "error");
     elExport.disabled = false;
     return;
   }
 
   if (!response.ok) {
-    showToastRaw(mapErrorCode(response.error.code, response.error.status), "error");
+    showToast(mapErrorCode(response.error.code, response.error.status), "error");
     elExport.disabled = false;
     return;
   }
@@ -134,7 +134,7 @@ async function handleExport(chatId: string): Promise<void> {
 
   setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
 
-  showToastRaw("Exported successfully.", "info");
+  showToast("Exported successfully.", "info");
   elExport.disabled = false;
 }
 
