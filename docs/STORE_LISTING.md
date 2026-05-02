@@ -130,8 +130,6 @@ Privacy policy URL: pending. Before submitting, make the repo public and use:
 https://github.com/zhebil/markhive/blob/main/PRIVACY.md
 ```
 
-(Or, if you want to keep the repo private, run `gh gist create PRIVACY.md --public --desc "Markhive privacy policy"` and use the gist URL.)
-
 ---
 
 ## Store assets checklist
