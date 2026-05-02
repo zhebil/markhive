@@ -1,0 +1,17 @@
+{
+  "name": "markhive",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc && node scripts/copy-assets.mjs",
+    "watch": "tsc --watch & node scripts/copy-assets.mjs --watch",
+    "test": "node --test --experimental-strip-types test/**/*.test.ts",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.270",
+    "typescript": "^5.5.0",
+    "chokidar": "^3.6.0"
+  }
+}
