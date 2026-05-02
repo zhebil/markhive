@@ -1,0 +1,19 @@
+{
+  "uuid": "dddd1234-5678-90ab-cdef-1234567890ab",
+  "name": "Attachments example",
+  "model": "claude-opus-4-5",
+  "created_at": "2026-05-01T10:00:00Z",
+  "chat_messages": [
+    {
+      "sender": "human",
+      "content": [{ "type": "text", "text": "Here is my document." }],
+      "attachments": [
+        { "file_name": "spec.pdf" }
+      ]
+    },
+    {
+      "sender": "assistant",
+      "content": [{ "type": "text", "text": "I read your document." }]
+    }
+  ]
+}

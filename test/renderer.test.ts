@@ -99,3 +99,22 @@ test("render: artifact appears regardless of tool toggles", () => {
   assert.ok(out.includes("```python"), "should have fenced code block with language");
   assert.ok(out.includes("def hello():"), "should include artifact content");
 });
+
+test("render: attachment placeholder appears before message text", () => {
+  const conv = fixture("with-attachments");
+  const out = render(conv, defaultOpts);
+  assert.ok(out.includes("[attachment: spec.pdf]"), "should have attachment placeholder");
+  const attPos = out.indexOf("[attachment: spec.pdf]");
+  const textPos = out.indexOf("Here is my document.");
+  assert.ok(attPos < textPos, "attachment placeholder comes before message text");
+});
+
+test("render: unknown block renders as HTML comment and does not throw", () => {
+  const conv = fixture("with-unknown");
+  let out: string;
+  assert.doesNotThrow(() => {
+    out = render(conv, defaultOpts);
+  });
+  assert.ok(out!.includes("<!-- unsupported block: future_thing -->"), "should render HTML comment");
+  assert.ok(out!.includes("Response after unknown block."), "should include text after unknown block");
+});

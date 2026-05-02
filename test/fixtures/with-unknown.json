@@ -1,0 +1,19 @@
+{
+  "uuid": "eeee1234-5678-90ab-cdef-1234567890ab",
+  "name": "Unknown block example",
+  "model": "claude-opus-4-5",
+  "created_at": "2026-05-01T10:00:00Z",
+  "chat_messages": [
+    {
+      "sender": "human",
+      "content": [{ "type": "text", "text": "Hello" }]
+    },
+    {
+      "sender": "assistant",
+      "content": [
+        { "type": "future_thing", "data": "some future content" },
+        { "type": "text", "text": "Response after unknown block." }
+      ]
+    }
+  ]
+}
