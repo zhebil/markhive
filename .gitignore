@@ -6,7 +6,10 @@
 
 node_modules/
 dist/
+.release/
+*.zip
 
 # Local test exports
 /*.md
 !/README.md
+!/PRIVACY.md

@@ -1,13 +1,14 @@
 {
   "name": "markhive",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "tsc && node scripts/copy-assets.mjs",
     "watch": "tsc --watch & node scripts/copy-assets.mjs --watch",
     "test": "node --test --experimental-strip-types test/**/*.test.ts",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist *.zip",
+    "pack:store": "npm run clean && npm run build && node scripts/pack.mjs"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.270",
