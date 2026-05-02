@@ -23,3 +23,6 @@ CleanShot*.png
 /*.md
 !/README.md
 !/PRIVACY.md
+
+# Chrome Web Store dev-console paste-bin; kept local, not part of the repo
+docs/STORE_LISTING.md
