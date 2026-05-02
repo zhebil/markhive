@@ -1,0 +1,29 @@
+{
+  "uuid": "bbbb1234-5678-90ab-cdef-1234567890ab",
+  "name": "Tools example",
+  "model": "claude-opus-4-5",
+  "created_at": "2026-05-01T10:00:00Z",
+  "chat_messages": [
+    {
+      "sender": "human",
+      "content": [{ "type": "text", "text": "Search for cats." }]
+    },
+    {
+      "sender": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "tool-1",
+          "name": "web_search",
+          "input": { "query": "cats" }
+        },
+        {
+          "type": "tool_result",
+          "tool_use_id": "tool-1",
+          "content": [{ "type": "text", "text": "Found 1000 results about cats." }]
+        },
+        { "type": "text", "text": "Here are the results." }
+      ]
+    }
+  ]
+}

@@ -57,3 +57,37 @@ test("render: thinking included when includeThinking is true", () => {
   const textPos = out.indexOf("The answer is 4.");
   assert.ok(thinkPos < textPos, "thinking comes before text");
 });
+
+test("render: tool call rendered, result omitted (includeToolInputs only)", () => {
+  const conv = fixture("with-tools");
+  const out = render(conv, { ...defaultOpts, includeToolInputs: true, includeToolResults: false });
+  assert.ok(out.includes("> **Tool call: web_search**"), "should render tool call");
+  assert.ok(!out.includes("> **Tool result:"), "should omit tool result");
+  assert.ok(out.includes("Here are the results."), "should include text");
+});
+
+test("render: result rendered, call omitted (includeToolResults only)", () => {
+  const conv = fixture("with-tools");
+  const out = render(conv, { ...defaultOpts, includeToolInputs: false, includeToolResults: true });
+  assert.ok(!out.includes("> **Tool call:"), "should omit tool call");
+  assert.ok(out.includes("> **Tool result: web_search**"), "should render tool result with name");
+  assert.ok(out.includes("Found 1000 results about cats."), "should include result text");
+});
+
+test("render: both tool call and result rendered", () => {
+  const conv = fixture("with-tools");
+  const out = render(conv, { ...defaultOpts, includeToolInputs: true, includeToolResults: true });
+  assert.ok(out.includes("> **Tool call: web_search**"), "should render tool call");
+  assert.ok(out.includes("> **Tool result: web_search**"), "should render tool result");
+  const callPos = out.indexOf("> **Tool call: web_search**");
+  const resultPos = out.indexOf("> **Tool result: web_search**");
+  assert.ok(callPos < resultPos, "tool call comes before result");
+});
+
+test("render: both tools omitted when both toggles off", () => {
+  const conv = fixture("with-tools");
+  const out = render(conv, { ...defaultOpts, includeToolInputs: false, includeToolResults: false });
+  assert.ok(!out.includes("> **Tool call:"), "should omit tool call");
+  assert.ok(!out.includes("> **Tool result:"), "should omit tool result");
+  assert.ok(out.includes("Here are the results."), "should include text");
+});
