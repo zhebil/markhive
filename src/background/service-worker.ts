@@ -26,7 +26,12 @@ chrome.runtime.onMessage.addListener(
       try {
         const orgId = await fetchOrgId();
         const conversation = await fetchConversation(orgId, req.chatId);
-        const c = conversation as { chat_messages?: Array<{ sender?: string; content?: unknown }> };
+        const c = conversation as { chat_messages?: Array<Record<string, unknown>> };
+        console.log("Markhive: top-level conversation keys", Object.keys(conversation as object));
+        if (c.chat_messages?.[0]) {
+          console.log("Markhive: first message keys", Object.keys(c.chat_messages[0]));
+          console.log("Markhive: first message full", c.chat_messages[0]);
+        }
         const allBlocks: Array<Record<string, unknown>> = [];
         for (const m of c.chat_messages ?? []) {
           if (Array.isArray(m.content)) {
