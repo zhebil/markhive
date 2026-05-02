@@ -4,7 +4,6 @@
   "version": "1.0.0",
   "description": "Export the open Claude.ai conversation to a Markdown file. Local only, no servers, no telemetry.",
   "permissions": ["storage", "downloads", "activeTab", "scripting"],
-  "host_permissions": ["https://claude.ai/*"],
   "action": { "default_popup": "popup/popup.html", "default_title": "Markhive" },
   "icons": {
     "16": "icons/16.png",

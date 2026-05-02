@@ -105,4 +105,4 @@ Run after each meaningful change:
 
 ## License
 
-MIT. Copyright 2026 Yevhenii Bilyk.
+MIT - see [`LICENSE`](./LICENSE). Copyright 2026 Yevhenii Bilyk.
