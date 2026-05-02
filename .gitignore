@@ -9,6 +9,9 @@ dist/
 .release/
 *.zip
 
+# Raw screenshot captures (processed versions live in store-assets/)
+CleanShot*.png
+
 # Local test exports
 /*.md
 !/README.md

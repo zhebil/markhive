@@ -123,8 +123,13 @@ Then check:
 - [x] I do not use or transfer user data for purposes unrelated to the item's single purpose
 - [x] I do not use or transfer user data to determine creditworthiness or for lending purposes
 
-Privacy policy URL: paste the raw URL of `PRIVACY.md` once it is published on GitHub, e.g.
-`https://github.com/zhebil/markhive/blob/main/PRIVACY.md`
+Privacy policy URL:
+
+```
+https://gist.github.com/zhebil/3b427e882c89bf109a1c7ae6c4c9d0a3
+```
+
+(Public gist - update with `gh gist edit 3b427e882c89bf109a1c7ae6c4c9d0a3 PRIVACY.md` whenever `PRIVACY.md` in the repo changes.)
 
 ---
 
