@@ -109,6 +109,26 @@ test("render: attachment placeholder appears before message text", () => {
   assert.ok(attPos < textPos, "attachment placeholder comes before message text");
 });
 
+test("render: title with double quote is correctly escaped in YAML frontmatter", () => {
+  const name = 'Say "hello" to the world';
+  const conv: Conversation = {
+    uuid: "dddd1234-5678-90ab-cdef-1234567890ab",
+    name,
+    model: "claude-opus-4-5",
+    created_at: "2026-05-01T10:00:00Z",
+    chat_messages: [],
+  };
+  const out = render(conv, defaultOpts);
+  const titleLine = out.split("\n").find((l) => l.startsWith("title:"))!;
+  assert.ok(titleLine !== undefined, "title line must exist");
+  // JSON.stringify produces a valid YAML double-quoted string for any input
+  assert.strictEqual(
+    titleLine,
+    `title: ${JSON.stringify(name)}`,
+    "title line must use JSON.stringify escaping"
+  );
+});
+
 test("render: tool_result resolves tool name from a different message", () => {
   const conv = fixture("with-cross-message-tools");
   const out = render(conv, { ...defaultOpts, includeToolResults: true });

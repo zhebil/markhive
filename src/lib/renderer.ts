@@ -34,7 +34,7 @@ export function render(conv: Conversation, opts: RenderOptions): string {
 function renderFrontmatter(conv: Conversation, opts: RenderOptions): string {
   return [
     "---",
-    `title: "${conv.name}"`,
+    `title: ${JSON.stringify(conv.name)}`,
     `chat_id: ${conv.uuid}`,
     `url: https://claude.ai/chat/${conv.uuid}`,
     `model: ${conv.model}`,
