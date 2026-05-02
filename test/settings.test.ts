@@ -41,15 +41,11 @@ test("saveSettings and loadSettings round-trip", async () => {
 
 test("partial saved state merges with defaults", async () => {
   (globalThis as unknown as { chrome: unknown }).chrome = { storage: makeStorageShim() };
-  const { loadSettings: load2, saveSettings: save2 } = await import("../src/lib/settings.ts");
+  const shim = (globalThis as unknown as { chrome: { storage: ReturnType<typeof makeStorageShim> } }).chrome.storage;
+  shim.local.set({ markhive: { includeThinking: true } });
 
-  const partial = { includeThinking: true };
-  (globalThis as unknown as { chrome: { storage: { local: { set: (items: Record<string, unknown>, cb?: () => void) => void } } } })
-    .chrome.storage.local.set({ markhive: partial });
-
-  const loaded = await load2();
+  const loaded = await loadSettings();
   assert.equal(loaded.includeThinking, true);
   assert.equal(loaded.includeFrontmatter, DEFAULTS.includeFrontmatter);
   assert.equal(loaded.filenameTemplate, DEFAULTS.filenameTemplate);
-  void save2;
 });
