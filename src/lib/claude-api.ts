@@ -50,9 +50,7 @@ export async function fetchOrgId(): Promise<string> {
 }
 
 export async function fetchConversation(orgId: string, chatId: string): Promise<unknown> {
-  // rendering_mode=raw returns unprocessed typed blocks (tool_use, tool_result, thinking, etc.)
-  // rendering_mode=messages collapses tool calls into a fallback text string on some clients
-  const url = `https://claude.ai/api/organizations/${orgId}/chat_conversations/${chatId}?tree=True&rendering_mode=raw`;
+  const url = `https://claude.ai/api/organizations/${orgId}/chat_conversations/${chatId}?tree=True&rendering_mode=messages`;
   const res = await claudeFetch(url);
   return res.json();
 }

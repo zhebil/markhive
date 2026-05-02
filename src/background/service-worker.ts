@@ -26,6 +26,13 @@ chrome.runtime.onMessage.addListener(
       try {
         const orgId = await fetchOrgId();
         const conversation = await fetchConversation(orgId, req.chatId);
+        const c = conversation as { chat_messages?: Array<{ sender?: string; content?: unknown }> };
+        const sample = c.chat_messages?.slice(0, 2).map((m) => ({
+          sender: m.sender,
+          contentType: Array.isArray(m.content) ? "array" : typeof m.content,
+          contentSample: Array.isArray(m.content) ? m.content.slice(0, 2) : m.content,
+        }));
+        console.log("Markhive: conversation shape sample", sample);
         sendResponse({ ok: true, conversation });
       } catch (err) {
         if (err instanceof ClaudeAuthError) {
