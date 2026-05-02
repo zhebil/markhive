@@ -147,3 +147,34 @@ test("render: unknown block renders as HTML comment and does not throw", () => {
   assert.ok(out!.includes("<!-- unsupported block: future_thing -->"), "should render HTML comment");
   assert.ok(out!.includes("Response after unknown block."), "should include text after unknown block");
 });
+
+test("render: H1 title is present after frontmatter", () => {
+  const conv = fixture("simple-text");
+  const out = render(conv, defaultOpts);
+  assert.ok(out.includes("# Hello world"), "H1 should contain conversation name");
+  const fmEnd = out.indexOf("---", out.indexOf("---") + 3);
+  const h1Pos = out.indexOf("# Hello world");
+  const userPos = out.indexOf("## User");
+  assert.ok(fmEnd < h1Pos, "H1 should come after frontmatter");
+  assert.ok(h1Pos < userPos, "H1 should come before first message");
+});
+
+test("render: H1 title is first content line when frontmatter disabled", () => {
+  const conv = fixture("simple-text");
+  const out = render(conv, { ...defaultOpts, includeFrontmatter: false });
+  assert.ok(!out.includes("---"), "no frontmatter delimiter");
+  assert.ok(out.startsWith("# "), "H1 should be the first line when no frontmatter");
+  assert.ok(out.includes("# Hello world"), "H1 should contain conversation name");
+});
+
+test("render: H1 falls back to Untitled when conv.name is empty", () => {
+  const conv: Conversation = {
+    uuid: "aaaa0000-0000-0000-0000-000000000000",
+    name: "",
+    model: "claude-opus-4-5",
+    created_at: "2026-01-01T00:00:00Z",
+    chat_messages: [],
+  };
+  const out = render(conv, { ...defaultOpts, includeFrontmatter: false });
+  assert.ok(out.includes("# Untitled"), "should fall back to Untitled H1 when name is empty");
+});

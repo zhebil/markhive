@@ -22,6 +22,10 @@ export function render(conv: Conversation, opts: RenderOptions): string {
     parts.push(renderFrontmatter(conv, opts));
   }
 
+  // H1 makes the conversation title navigable in any markdown viewer
+  const h1Title = conv.name || "Untitled";
+  parts.push(`# ${h1Title}\n`);
+
   const toolUseMap = buildToolUseMap(conv);
 
   for (const msg of conv.chat_messages) {
