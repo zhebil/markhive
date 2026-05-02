@@ -2,6 +2,7 @@ import { parseChatId } from "../lib/url-parse.ts";
 import { loadSettings, saveSettings } from "../lib/settings.ts";
 import { render } from "../lib/renderer.ts";
 import { buildFilename } from "../lib/filename.ts";
+import { fetchConversationFromCache } from "../lib/idb-cache.ts";
 import type { Conversation } from "../lib/types.ts";
 import type { RenderOptions } from "../lib/renderer.ts";
 
@@ -61,10 +62,13 @@ function mapErrorCode(code: string, status?: number): string {
   }
 }
 
+let activeTabId: number | null = null;
+
 async function init(): Promise<void> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   const url = tab?.url ?? "";
   const chatId = parseChatId(url);
+  activeTabId = tab?.id ?? null;
 
   if (chatId === null) {
     elGenerate.disabled = true;
@@ -110,20 +114,36 @@ async function handleGenerate(chatId: string): Promise<void> {
       | { ok: true; conversation: unknown }
       | { ok: false; error: { code: string; status?: number } };
 
-    let response: ExportResponse;
-    try {
-      response = (await chrome.runtime.sendMessage({ kind: "export", chatId })) as ExportResponse;
-    } catch {
-      showToast(mapErrorCode("network"), "error");
-      return;
+    let conversation: unknown = null;
+    let source: "cache" | "api" = "cache";
+
+    if (activeTabId !== null) {
+      try {
+        conversation = await fetchConversationFromCache(activeTabId, chatId);
+      } catch (err) {
+        console.warn("Markhive: IDB cache read failed, falling back to API", err);
+        conversation = null;
+      }
     }
 
-    if (!response.ok) {
-      showToast(mapErrorCode(response.error.code, response.error.status), "error");
-      return;
+    if (!conversation) {
+      source = "api";
+      let response: ExportResponse;
+      try {
+        response = (await chrome.runtime.sendMessage({ kind: "export", chatId })) as ExportResponse;
+      } catch {
+        showToast(mapErrorCode("network"), "error");
+        return;
+      }
+      if (!response.ok) {
+        showToast(mapErrorCode(response.error.code, response.error.status), "error");
+        return;
+      }
+      conversation = response.conversation;
     }
+    console.log(`Markhive: conversation source = ${source}`);
 
-    const conv = response.conversation as Conversation;
+    const conv = conversation as Conversation;
     const opts: RenderOptions = {
       includeFrontmatter: settings.includeFrontmatter,
       includeThinking: settings.includeThinking,

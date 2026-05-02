@@ -38,7 +38,7 @@ Settings are saved per browser profile via `chrome.storage.local` and restored o
 
 ## Privacy
 
-Everything stays local. Markhive makes exactly two network calls, both to `claude.ai`:
+Everything stays local. Markhive prefers reading the conversation from your browser's existing IndexedDB cache (no network call) via a script injected into the active claude.ai tab. If the cache is empty, it falls back to two REST calls to `claude.ai`:
 
 1. `GET /api/organizations` - to discover your org ID.
 2. `GET /api/organizations/<org>/chat_conversations/<chat>?tree=True&rendering_mode=messages` - to fetch the conversation.
@@ -47,7 +47,7 @@ Both calls use your existing session cookie. No data leaves your machine to any 
 
 ## Limitations
 
-- **Tool calls are not exported.** The `claude.ai` REST endpoint we use substitutes `tool_use`/`tool_result` blocks with a placeholder text on the server side; the structured tool data is only available over the live streaming channel. Markhive suppresses the placeholder so exports stay clean, but tool calls (e.g. web_search) will not appear in the markdown. Toggling "Include tool inputs/results" has no effect on conversations until this is solved (see roadmap).
+- **Tool calls require an opened conversation.** Markhive reads the conversation from the page's IndexedDB react-query cache, which holds the real `tool_use` and `tool_result` blocks streamed when messages were created. If the cache is empty (e.g. a chat you've never opened), Markhive falls back to the `claude.ai` REST endpoint, which strips tool blocks server-side - those exports won't include tool details. To export tool calls, open the conversation in claude.ai first, then click Markhive.
 - **Single conversation per export** - bulk export is not supported in v1.
 - **Single org** - if your account has multiple orgs, v1 always picks the first one returned. If the conversation belongs to a different org, you will see an API error.
 - **Markdown only** - no HTML output in v1.
