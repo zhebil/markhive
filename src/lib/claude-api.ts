@@ -30,22 +30,7 @@ export class ClaudeNetworkError extends Error {
   }
 }
 
-export async function fetchOrgId(): Promise<string> {
-  let res: Response;
-  try {
-    res = await fetch("https://claude.ai/api/organizations", { credentials: "include" });
-  } catch (err) {
-    throw new ClaudeNetworkError(err);
-  }
-  if (res.status === 401) throw new ClaudeAuthError();
-  if (!res.ok) throw new ClaudeApiError(res.status);
-  const orgs = await res.json();
-  if (!orgs?.length) throw new ClaudeNoOrgError();
-  return orgs[0].uuid;
-}
-
-export async function fetchConversation(orgId: string, chatId: string): Promise<unknown> {
-  const url = `https://claude.ai/api/organizations/${orgId}/chat_conversations/${chatId}?tree=True&rendering_mode=messages`;
+async function claudeFetch(url: string): Promise<Response> {
   let res: Response;
   try {
     res = await fetch(url, { credentials: "include" });
@@ -54,5 +39,18 @@ export async function fetchConversation(orgId: string, chatId: string): Promise<
   }
   if (res.status === 401) throw new ClaudeAuthError();
   if (!res.ok) throw new ClaudeApiError(res.status);
+  return res;
+}
+
+export async function fetchOrgId(): Promise<string> {
+  const res = await claudeFetch("https://claude.ai/api/organizations");
+  const orgs = await res.json();
+  if (!orgs?.length) throw new ClaudeNoOrgError();
+  return orgs[0].uuid;
+}
+
+export async function fetchConversation(orgId: string, chatId: string): Promise<unknown> {
+  const url = `https://claude.ai/api/organizations/${orgId}/chat_conversations/${chatId}?tree=True&rendering_mode=messages`;
+  const res = await claudeFetch(url);
   return res.json();
 }
