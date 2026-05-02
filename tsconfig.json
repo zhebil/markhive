@@ -11,7 +11,9 @@
     "lib": ["ES2022", "DOM"],
     "types": ["chrome", "node"],
     "allowImportingTsExtensions": true,
-    "rewriteRelativeImportExtensions": true
+    "rewriteRelativeImportExtensions": true,
+    "sourceMap": false,
+    "removeComments": true
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts"]
 }

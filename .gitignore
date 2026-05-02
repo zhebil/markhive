@@ -1,8 +1,15 @@
 
 # Beads / Dolt files (added by bd init)
+.beads/
 .dolt/
 *.db
 .beads-credential-key
+
+# AI agent scaffolding (kept locally, not part of the public repo)
+CLAUDE.md
+AGENTS.md
+.claude/
+docs/superpowers/
 
 node_modules/
 dist/
@@ -12,7 +19,7 @@ dist/
 # Raw screenshot captures (processed versions live in store-assets/)
 CleanShot*.png
 
-# Local test exports
+# Local test exports (date-prefixed Markdown files Markhive itself produces)
 /*.md
 !/README.md
 !/PRIVACY.md

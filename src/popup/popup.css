@@ -172,16 +172,11 @@ body {
 }
 .mh-toggle:last-of-type { border-bottom: none; }
 
-.mh-toggle-text {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-.mh-toggle-text .lbl {
+.mh-toggle .lbl {
   font-size: 13px;
   color: var(--ink);
   font-weight: 450;
+  min-width: 0;
 }
 
 .mh-toggle input[type="checkbox"] {
@@ -256,7 +251,7 @@ body {
   text-overflow: ellipsis;
   min-width: 0;
 }
-.mh-summary-empty { color: var(--ink-3); font-style: italic; }
+.mh-summary-list.mh-summary-empty { color: var(--ink-3); font-style: italic; }
 
 /* ---------- Save-to row ---------- */
 .mh-saveto {
@@ -303,10 +298,6 @@ body {
 .mh-saveto-path .path-host {
   color: var(--accent-ink);
   font-weight: 500;
-}
-.mh-saveto-path .path-sep {
-  color: var(--ink-3);
-  margin: 0 4px;
 }
 .mh-saveto-actions {
   display: flex;
@@ -428,11 +419,6 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-}
-.mh-preview-source .src-label {
-  font-weight: 500;
-  color: var(--ink-2);
-  text-transform: lowercase;
 }
 .mh-preview-source .src-time::before {
   content: "·";

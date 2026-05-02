@@ -15,10 +15,14 @@ export type ToolUseBlock = {
   input: unknown;
 };
 
+export type ToolResultContent =
+  | { type: "text"; text: string }
+  | (Record<string, unknown> & { type: string });
+
 export type ToolResultBlock = {
   type: "tool_result";
   tool_use_id: string;
-  content: Array<{ type: "text"; text: string } | { type: string; [k: string]: unknown }>;
+  content: ToolResultContent[];
 };
 
 export type ImageBlock = {
@@ -34,19 +38,13 @@ export type ToolUseArtifactBlock = {
   content: string;
 };
 
-export type UnknownBlock = {
-  type: string;
-  [k: string]: unknown;
-};
-
 export type ContentBlock =
   | TextBlock
   | ThinkingBlock
   | ToolUseBlock
   | ToolResultBlock
   | ImageBlock
-  | ToolUseArtifactBlock
-  | UnknownBlock;
+  | ToolUseArtifactBlock;
 
 export type Attachment = {
   file_name: string;

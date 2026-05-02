@@ -3,6 +3,12 @@
 // streamed payloads (with real tool_use / tool_result blocks), unlike the
 // REST endpoint which substitutes tool blocks with a placeholder text.
 
+type ReactQueryCache = {
+  clientState?: {
+    queries?: Array<{ queryKey?: unknown; state?: { data?: unknown } }>;
+  };
+};
+
 // This function runs in the page's isolated world via chrome.scripting.executeScript.
 // It must be self-contained: no closures, no imports, JSON-serializable args/return.
 function readConversationFromCacheInPage(chatId: string): Promise<unknown> {
@@ -25,14 +31,11 @@ function readConversationFromCacheInPage(chatId: string): Promise<unknown> {
       };
       req.onsuccess = () => {
         db.close();
-        const cache = req.result as { clientState?: { queries?: Array<{ queryKey?: unknown; state?: { data?: unknown } }> } } | undefined;
+        const cache = req.result as ReactQueryCache | undefined;
         const queries = cache?.clientState?.queries ?? [];
         const matches = queries.filter((q) => {
-          try {
-            return JSON.stringify(q.queryKey ?? "").includes(chatId);
-          } catch {
-            return false;
-          }
+          const qk = q.queryKey;
+          return Array.isArray(qk) && qk.includes(chatId);
         });
         const best = matches.find((q) => {
           const d = q.state?.data as { chat_messages?: unknown } | undefined;

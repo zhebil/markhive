@@ -179,6 +179,30 @@ test("render: H1 falls back to Untitled when conv.name is empty", () => {
   assert.ok(out.includes("# Untitled"), "should fall back to Untitled H1 when name is empty");
 });
 
+test("render: tool_result with triple backticks uses a longer fence", () => {
+  const conv: Conversation = {
+    uuid: "cccc0000-0000-0000-0000-000000000000",
+    name: "Fence test",
+    model: "claude-opus-4-5",
+    created_at: "2026-01-01T00:00:00Z",
+    chat_messages: [
+      {
+        sender: "assistant",
+        content: [
+          {
+            type: "tool_result",
+            tool_use_id: "tu_1",
+            content: [{ type: "text", text: "before\n```\ncode\n```\nafter" }],
+          } as any,
+        ],
+      },
+    ],
+  };
+  const out = render(conv, { ...defaultOpts, includeFrontmatter: false, includeToolResults: true });
+  // Fence delimiter must be longer than 3 backticks since the content contains ```.
+  assert.ok(out.includes("````"), "fence must be at least 4 backticks when content has ```");
+});
+
 test("render: API tool-block placeholder text is suppressed", () => {
   const conv: Conversation = {
     uuid: "bbbb0000-0000-0000-0000-000000000000",

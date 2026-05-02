@@ -13,27 +13,33 @@ import {
 import type { Conversation } from "../lib/types.ts";
 import type { RenderOptions } from "../lib/renderer.ts";
 
-const elChatTitle = document.getElementById("chat-title") as HTMLSpanElement;
-const elStatus = document.getElementById("mh-status") as HTMLSpanElement;
-const elFrontmatter = document.getElementById("opt-frontmatter") as HTMLInputElement;
-const elThinking = document.getElementById("opt-thinking") as HTMLInputElement;
-const elToolInputs = document.getElementById("opt-tool-inputs") as HTMLInputElement;
-const elToolResults = document.getElementById("opt-tool-results") as HTMLInputElement;
-const elOptions = document.getElementById("mh-options") as HTMLDivElement;
-const elOptionsSummary = document.getElementById("mh-options-summary") as HTMLDivElement;
-const elSummaryList = document.getElementById("mh-summary-list") as HTMLSpanElement;
-const elEditOptions = document.getElementById("btn-edit-options") as HTMLButtonElement;
-const elFolderName = document.getElementById("folder-name") as HTMLSpanElement;
-const elChooseFolder = document.getElementById("btn-choose-folder") as HTMLButtonElement;
-const elResetFolder = document.getElementById("btn-reset-folder") as HTMLButtonElement;
-const elGenerate = document.getElementById("btn-generate") as HTMLButtonElement;
-const elPreviewRegion = document.getElementById("preview-region") as HTMLDivElement;
-const elPreviewSource = document.getElementById("preview-source") as HTMLSpanElement;
-const elRegenerate = document.getElementById("btn-regenerate") as HTMLButtonElement;
-const elPreviewTextarea = document.getElementById("preview-textarea") as HTMLTextAreaElement;
-const elCopy = document.getElementById("btn-copy") as HTMLButtonElement;
-const elDownload = document.getElementById("btn-download") as HTMLButtonElement;
-const elToast = document.getElementById("toast") as HTMLDivElement;
+function mustGet<T extends HTMLElement>(id: string): T {
+  const el = document.getElementById(id);
+  if (!el) throw new Error(`Markhive: missing #${id}`);
+  return el as T;
+}
+
+const elChatTitle = mustGet<HTMLSpanElement>("chat-title");
+const elStatus = mustGet<HTMLSpanElement>("mh-status");
+const elFrontmatter = mustGet<HTMLInputElement>("opt-frontmatter");
+const elThinking = mustGet<HTMLInputElement>("opt-thinking");
+const elToolInputs = mustGet<HTMLInputElement>("opt-tool-inputs");
+const elToolResults = mustGet<HTMLInputElement>("opt-tool-results");
+const elOptions = mustGet<HTMLDivElement>("mh-options");
+const elOptionsSummary = mustGet<HTMLDivElement>("mh-options-summary");
+const elSummaryList = mustGet<HTMLSpanElement>("mh-summary-list");
+const elEditOptions = mustGet<HTMLButtonElement>("btn-edit-options");
+const elFolderName = mustGet<HTMLSpanElement>("folder-name");
+const elChooseFolder = mustGet<HTMLButtonElement>("btn-choose-folder");
+const elResetFolder = mustGet<HTMLButtonElement>("btn-reset-folder");
+const elGenerate = mustGet<HTMLButtonElement>("btn-generate");
+const elPreviewRegion = mustGet<HTMLDivElement>("preview-region");
+const elPreviewSource = mustGet<HTMLSpanElement>("preview-source");
+const elRegenerate = mustGet<HTMLButtonElement>("btn-regenerate");
+const elPreviewTextarea = mustGet<HTMLTextAreaElement>("preview-textarea");
+const elCopy = mustGet<HTMLButtonElement>("btn-copy");
+const elDownload = mustGet<HTMLButtonElement>("btn-download");
+const elToast = mustGet<HTMLDivElement>("toast");
 
 let optsExpanded = false;
 
@@ -49,23 +55,10 @@ function renderOptionsBlock(): void {
   const showSummary = previewOpen && !optsExpanded;
   elOptions.classList.toggle("hidden", showSummary);
   elOptionsSummary.classList.toggle("hidden", !showSummary);
-  if (showSummary) {
-    const active = TOGGLE_LABELS.filter(([el]) => el.checked).map(([, lbl]) => lbl);
-    elSummaryList.textContent = "";
-    if (active.length === 0) {
-      const span = document.createElement("span");
-      span.className = "mh-summary-empty";
-      span.textContent = "none";
-      elSummaryList.appendChild(span);
-    } else {
-      elSummaryList.textContent = active.join(" · ");
-    }
-  }
-}
-
-function setStatus(ready: boolean): void {
-  elStatus.classList.toggle("is-off", !ready);
-  elStatus.textContent = ready ? "ready" : "idle";
+  if (!showSummary) return;
+  const active = TOGGLE_LABELS.filter(([el]) => el.checked).map(([, lbl]) => lbl);
+  elSummaryList.classList.toggle("mh-summary-empty", active.length === 0);
+  elSummaryList.textContent = active.length === 0 ? "none" : active.join(" · ");
 }
 
 const CACHE_KEY = "markhive_last_export";
@@ -74,7 +67,6 @@ type CachedExport = {
   chatId: string;
   filename: string;
   markdown: string;
-  source: "cache" | "api";
   generatedAt: string;
   chatTitle: string;
 };
@@ -84,36 +76,26 @@ let activeTabId: number | null = null;
 let currentFilename = "export.md";
 let downloadDir: FileSystemDirectoryHandle | null = null;
 
-function renderToastBody(text: string, filename?: string): void {
-  elToast.textContent = "";
-  const wrap = document.createElement("span");
-  wrap.className = "mh-toast-text";
-  if (filename && text.includes(filename)) {
-    const idx = text.indexOf(filename);
-    wrap.appendChild(document.createTextNode(text.slice(0, idx)));
-    const strong = document.createElement("strong");
-    strong.textContent = filename;
-    wrap.appendChild(strong);
-    wrap.appendChild(document.createTextNode(text.slice(idx + filename.length)));
-  } else {
-    wrap.textContent = text;
-  }
-  elToast.appendChild(wrap);
-}
-
 function showToast(text: string, kind: "info" | "error", filename?: string): void {
   if (toastTimer !== null) {
     clearTimeout(toastTimer);
     toastTimer = null;
   }
-  renderToastBody(text, filename);
+  const wrap = document.createElement("span");
+  wrap.className = "mh-toast-text";
+  const idx = filename ? text.indexOf(filename) : -1;
+  if (idx >= 0 && filename) {
+    wrap.append(text.slice(0, idx));
+    const strong = document.createElement("strong");
+    strong.textContent = filename;
+    wrap.append(strong, text.slice(idx + filename.length));
+  } else {
+    wrap.textContent = text;
+  }
+  elToast.replaceChildren(wrap);
   elToast.className = `mh-toast ${kind}`;
   if (kind === "info") {
-    toastTimer = setTimeout(() => {
-      elToast.className = "mh-toast hidden";
-      elToast.textContent = "";
-      toastTimer = null;
-    }, 5000);
+    toastTimer = setTimeout(hideToast, 5000);
   }
 }
 
@@ -126,40 +108,14 @@ function hideToast(): void {
   elToast.textContent = "";
 }
 
-function mapErrorCode(code: string, status?: number): string {
-  switch (code) {
-    case "auth":
-      return "You're signed out of Claude. Sign in and retry.";
-    case "no-org":
-      return "No Claude org found on this account.";
-    case "network":
-      return "Couldn't reach claude.ai. Check your connection.";
-    case "api":
-      return `Claude API error (${status ?? "?"}). The API may have changed - file an issue.`;
-    default:
-      return `Unexpected error: ${code}.`;
-  }
-}
-
 function updateFolderUi(): void {
-  elFolderName.textContent = "";
-  if (downloadDir) {
-    const host = document.createElement("span");
-    host.className = "path-host";
-    host.textContent = downloadDir.name;
-    elFolderName.appendChild(host);
-    elFolderName.title = downloadDir.name;
-    elChooseFolder.textContent = "Change…";
-    elResetFolder.classList.remove("hidden");
-  } else {
-    const def = document.createElement("span");
-    def.className = "path-default";
-    def.textContent = "Downloads (default)";
-    elFolderName.appendChild(def);
-    elFolderName.title = "";
-    elChooseFolder.textContent = "Choose…";
-    elResetFolder.classList.add("hidden");
-  }
+  const span = document.createElement("span");
+  span.className = downloadDir ? "path-host" : "path-default";
+  span.textContent = downloadDir ? downloadDir.name : "Downloads (default)";
+  elFolderName.replaceChildren(span);
+  elFolderName.title = downloadDir?.name ?? "";
+  elChooseFolder.textContent = downloadDir ? "Change…" : "Choose…";
+  elResetFolder.classList.toggle("hidden", !downloadDir);
 }
 
 async function handleChooseFolder(): Promise<void> {
@@ -193,18 +149,16 @@ async function handleResetFolder(): Promise<void> {
 }
 
 async function readCachedExport(): Promise<CachedExport | null> {
-  const store = chrome.storage.session ?? chrome.storage.local;
   return new Promise((resolve) => {
-    store.get(CACHE_KEY, (result) => {
+    chrome.storage.session.get(CACHE_KEY, (result) => {
       resolve((result[CACHE_KEY] as CachedExport | undefined) ?? null);
     });
   });
 }
 
 async function writeCachedExport(entry: CachedExport): Promise<void> {
-  const store = chrome.storage.session ?? chrome.storage.local;
   return new Promise((resolve) => {
-    store.set({ [CACHE_KEY]: entry }, resolve);
+    chrome.storage.session.set({ [CACHE_KEY]: entry }, () => resolve());
   });
 }
 
@@ -212,16 +166,14 @@ function showPreview(entry: CachedExport): void {
   elPreviewTextarea.value = entry.markdown;
   currentFilename = entry.filename;
 
-  elPreviewSource.textContent = "";
-  const lbl = document.createElement("span");
-  lbl.className = "src-label";
-  lbl.textContent = entry.source === "cache" ? "from cache" : "fresh export";
+  const t = new Date(entry.generatedAt).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
   const time = document.createElement("span");
   time.className = "src-time";
-  const d = new Date(entry.generatedAt);
-  time.textContent = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-  elPreviewSource.appendChild(lbl);
-  elPreviewSource.appendChild(time);
+  time.textContent = `exported ${t}`;
+  elPreviewSource.replaceChildren(time);
 
   if (entry.chatTitle) {
     elChatTitle.textContent = entry.chatTitle;
@@ -238,7 +190,9 @@ async function init(): Promise<void> {
   const chatId = parseChatId(url);
   activeTabId = tab?.id ?? null;
 
-  setStatus(chatId !== null);
+  const ready = chatId !== null;
+  elStatus.classList.toggle("is-off", !ready);
+  elStatus.textContent = ready ? "ready" : "idle";
   if (chatId === null) {
     elGenerate.disabled = true;
     for (const [el] of TOGGLE_LABELS) {
@@ -304,87 +258,54 @@ async function init(): Promise<void> {
   });
 }
 
+async function commitExport(chatId: string, conv: Conversation): Promise<void> {
+  const opts: RenderOptions = {
+    includeFrontmatter: elFrontmatter.checked,
+    includeThinking: elThinking.checked,
+    includeToolInputs: elToolInputs.checked,
+    includeToolResults: elToolResults.checked,
+    exportedAt: new Date().toISOString(),
+  };
+
+  const entry: CachedExport = {
+    chatId,
+    filename: buildFilename(conv),
+    markdown: render(conv, opts),
+    generatedAt: new Date().toISOString(),
+    chatTitle: conv.name ?? "",
+  };
+  await writeCachedExport(entry);
+  showPreview(entry);
+}
+
 async function handleGenerate(chatId: string): Promise<void> {
   hideToast();
   elGenerate.disabled = true;
   elRegenerate.disabled = true;
 
   try {
-    const settings = {
+    await saveSettings({
       includeFrontmatter: elFrontmatter.checked,
       includeThinking: elThinking.checked,
       includeToolInputs: elToolInputs.checked,
       includeToolResults: elToolResults.checked,
-      filenameTemplate: "date-title" as const,
-    };
+      filenameTemplate: "date-title",
+    });
 
-    await saveSettings(settings);
-
-    type ExportResponse =
-      | { ok: true; conversation: unknown }
-      | { ok: false; error: { code: string; status?: number } };
-
-    let conversation: unknown = null;
-    let source: "cache" | "api" = "cache";
-
-    if (activeTabId !== null) {
-      try {
-        conversation = await fetchConversationFromCache(activeTabId, chatId);
-      } catch (err) {
-        console.warn("Markhive: IDB cache read failed, falling back to API", err);
-        conversation = null;
-      }
+    const conv = activeTabId === null
+      ? null
+      : await fetchConversationFromCache(activeTabId, chatId);
+    if (!conv) {
+      showToast(
+        "No cached conversation. Open this chat in the tab so it loads, then click Regenerate.",
+        "error",
+      );
+      return;
     }
-
-    if (!conversation) {
-      source = "api";
-      let response: ExportResponse;
-      try {
-        response = (await chrome.runtime.sendMessage({ kind: "export", chatId })) as ExportResponse;
-      } catch {
-        showToast(mapErrorCode("network"), "error");
-        return;
-      }
-      if (!response.ok) {
-        showToast(mapErrorCode(response.error.code, response.error.status), "error");
-        return;
-      }
-      conversation = response.conversation;
-    }
-    console.log(`Markhive: conversation source = ${source}`);
-
-    const conv = conversation as Conversation;
-    const opts: RenderOptions = {
-      includeFrontmatter: settings.includeFrontmatter,
-      includeThinking: settings.includeThinking,
-      includeToolInputs: settings.includeToolInputs,
-      includeToolResults: settings.includeToolResults,
-      exportedAt: new Date().toISOString(),
-    };
-
-    const markdown = render(conv, opts);
-    const filename = buildFilename(conv);
-    const chatTitle = conv.name ?? "";
-
-    if (chatTitle) {
-      elChatTitle.textContent = chatTitle;
-      elChatTitle.title = chatTitle;
-    }
-
-    const entry: CachedExport = {
-      chatId,
-      filename,
-      markdown,
-      source,
-      generatedAt: new Date().toISOString(),
-      chatTitle,
-    };
-    await writeCachedExport(entry);
-    showPreview(entry);
+    await commitExport(chatId, conv as Conversation);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
     console.error("Markhive generate failed:", err);
-    showToast(`Couldn't render conversation: ${message}`, "error");
+    showToast("Couldn't render conversation. See console for details.", "error");
   } finally {
     elGenerate.disabled = false;
     elRegenerate.disabled = false;
@@ -408,7 +329,13 @@ async function handleDownload(): Promise<void> {
     try {
       const granted = await ensureWritePermission(downloadDir);
       if (!granted) {
-        showToast("Folder permission denied. Falling back to Downloads.", "error");
+        await clearDirectoryHandle();
+        downloadDir = null;
+        updateFolderUi();
+        showToast(
+          "Folder permission expired - reverted to Downloads. Choose the folder again to resume saving there.",
+          "error",
+        );
       } else {
         await writeFileToDirectory(downloadDir, currentFilename, text);
         const fullName = `${downloadDir.name}/${currentFilename}`;
@@ -417,7 +344,22 @@ async function handleDownload(): Promise<void> {
       }
     } catch (err) {
       console.error("Markhive: write to chosen folder failed", err);
-      showToast(`Couldn't write to ${downloadDir.name}. Falling back to Downloads.`, "error");
+      const errName = (err as { name?: string })?.name;
+      if (errName === "NotAllowedError" || errName === "SecurityError") {
+        const previousName = downloadDir?.name ?? "chosen folder";
+        await clearDirectoryHandle();
+        downloadDir = null;
+        updateFolderUi();
+        showToast(
+          `Lost permission for "${previousName}" - reverted to Downloads. Choose the folder again to resume saving there.`,
+          "error",
+        );
+      } else {
+        showToast(
+          `Couldn't write to ${downloadDir?.name ?? "chosen folder"}. Falling back to Downloads.`,
+          "error",
+        );
+      }
     }
   }
 
@@ -430,10 +372,6 @@ async function handleDownload(): Promise<void> {
       showToast(`Download failed: ${chrome.runtime.lastError.message}`, "error");
       return;
     }
-    const fallbackTimer = setTimeout(() => {
-      URL.revokeObjectURL(blobUrl);
-      chrome.downloads.onChanged.removeListener(onChanged);
-    }, 30_000);
 
     function onChanged(delta: chrome.downloads.DownloadDelta): void {
       if (delta.id === downloadId && delta.state?.current === "complete") {
@@ -442,6 +380,11 @@ async function handleDownload(): Promise<void> {
         chrome.downloads.onChanged.removeListener(onChanged);
       }
     }
+
+    const fallbackTimer = setTimeout(() => {
+      URL.revokeObjectURL(blobUrl);
+      chrome.downloads.onChanged.removeListener(onChanged);
+    }, 30_000);
 
     chrome.downloads.onChanged.addListener(onChanged);
   });

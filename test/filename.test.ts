@@ -19,3 +19,10 @@ test("buildFilename uses UTC date", () => {
   const conv = { ...base, created_at: "2026-12-31T23:59:00Z" };
   assert.equal(buildFilename(conv), "2026-12-31-hello-world.md");
 });
+
+test("buildFilename renders sensibly when created_at is invalid", () => {
+  const conv = { ...base, created_at: "not-a-date" };
+  const name = buildFilename(conv);
+  // Falls back to "today" - we just assert the shape is YYYY-MM-DD-slug.md.
+  assert.match(name, /^\d{4}-\d{2}-\d{2}-hello-world\.md$/);
+});

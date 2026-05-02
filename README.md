@@ -1,83 +1,108 @@
 # Markhive
 
-A minimalistic Chrome extension that exports the open `claude.ai` conversation to a local Markdown file. No backend, no telemetry, no third-party storage.
+A small Chrome extension that exports the open `claude.ai` conversation to a local Markdown file. No backend, no telemetry, no third-party storage. Local-only.
 
 ## What it is
 
-Markhive = "markdown" + "archive". Click the toolbar icon while viewing a Claude chat, choose what to include, and a `.md` file lands in your downloads folder. The only network calls are to `claude.ai` itself, authorized by your existing browser session.
+Markhive = "markdown" + "archive". Click the toolbar icon while viewing a Claude chat, choose what to include, and a `.md` file lands in your Downloads folder (or in any folder you pick via the system picker).
 
-## Install (load unpacked)
+## Install
 
-Markhive is not on the Chrome Web Store yet. Load it from source:
+### From source (load unpacked)
 
-1. Clone or download this repository.
-2. Run `npm install && npm run build`. The compiled extension appears in `dist/`.
-3. Open `chrome://extensions` in Chrome.
-4. Enable **Developer mode** (top-right toggle).
-5. Click **Load unpacked** and select the `dist/` folder.
-6. The Markhive icon (yellow M) appears in the toolbar.
+1. Clone this repo.
+2. `npm install && npm run build`. The compiled extension lands in `dist/`.
+3. Open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and select `dist/`.
+4. The amber Markhive icon appears in the toolbar.
+
+### From the Chrome Web Store
+
+Listing pending review.
 
 ## Usage
 
-1. Open `https://claude.ai/chat/<any-conversation>`.
-2. Click the Markhive toolbar icon.
-3. The popup shows the chat title and four toggle checkboxes.
-4. Adjust toggles as needed, then click **Export**.
-5. Your browser downloads `<YYYY-MM-DD>-<slugified-title>.md`.
+1. Open any `https://claude.ai/chat/<id>` page and let it load.
+2. Click the Markhive icon. The popup shows the chat title and four toggles.
+3. Adjust toggles, then click **Generate markdown**.
+4. Use **Copy** to put the Markdown on your clipboard or **Download** to save it as `<YYYY-MM-DD>-<slug>.md`. By default this saves to your browser's Downloads folder; click **Choose…** in the SAVE TO row to redirect to a folder of your choice (e.g. an Obsidian vault) via the File System Access API.
 
-## Settings explained
+## Settings
 
 | Toggle | Default | What it does |
 |---|---|---|
-| Include frontmatter | On | Adds a YAML block at the top with title, chat ID, URL, model, and timestamps. |
-| Include thinking | Off | Renders extended thinking blocks as blockquotes labeled `**Thinking**`. |
-| Include tool inputs | Off | Renders tool-call inputs as fenced JSON blockquotes when present. See limitations below. |
-| Include tool results | Off | Renders tool results as fenced blockquotes when present. See limitations below. |
+| Include frontmatter | On | Adds a YAML block with title, chat id, URL, model, and timestamps. |
+| Include thinking | Off | Renders extended thinking blocks as labelled blockquotes. |
+| Include tool inputs | Off | Renders tool-call inputs as fenced JSON. |
+| Include tool results | Off | Renders tool results as fenced blocks. |
 
-Settings are saved per browser profile via `chrome.storage.local` and restored on the next popup open.
+Toggle preferences are saved per browser profile via `chrome.storage.local`. The most recent rendered Markdown is cached in `chrome.storage.session` so reopening the popup on the same chat shows the previous export instantly; that cache is dropped when the browser session ends.
+
+## How it reads conversations
+
+Markhive reads the conversation from the active claude.ai tab's IndexedDB cache, which the Claude web app populates as you use the chat. There is no separate API call: the data is already in your browser, and Markhive uses `chrome.scripting.executeScript` to read it from inside the page (`activeTab` only, on user click).
+
+If the cache is empty for a given chat (e.g. you have not opened that chat in this browser), Markhive shows: *"No cached conversation. Open this chat in the tab so it loads, then click Regenerate."*
 
 ## Privacy
 
-Everything stays local. Markhive prefers reading the conversation from your browser's existing IndexedDB cache (no network call) via a script injected into the active claude.ai tab. If the cache is empty, it falls back to two REST calls to `claude.ai`:
+Everything stays local. There are no Markhive servers, no analytics, no error reporting, no remote configuration, no third-party SDKs. The extension does not request the `cookies` permission and does not read or store auth tokens.
 
-1. `GET /api/organizations` - to discover your org ID.
-2. `GET /api/organizations/<org>/chat_conversations/<chat>?tree=True&rendering_mode=messages` - to fetch the conversation.
-
-Both calls use your existing session cookie. No data leaves your machine to any other destination. There is no analytics, no error reporting, no remote config.
+See [`PRIVACY.md`](./PRIVACY.md) for the formal policy and per-permission justification.
 
 ## Limitations
 
-- **Tool calls require an opened conversation.** Markhive reads the conversation from the page's IndexedDB react-query cache, which holds the real `tool_use` and `tool_result` blocks streamed when messages were created. If the cache is empty (e.g. a chat you've never opened), Markhive falls back to the `claude.ai` REST endpoint, which strips tool blocks server-side - those exports won't include tool details. To export tool calls, open the conversation in claude.ai first, then click Markhive.
-- **Single conversation per export** - bulk export is not supported in v1.
-- **Single org** - if your account has multiple orgs, v1 always picks the first one returned. If the conversation belongs to a different org, you will see an API error.
-- **Markdown only** - no HTML output in v1.
-- **No artifact side-car files** - artifacts are inlined as fenced code blocks in the `.md` file; they are not written as separate files.
-- **No attachment downloads** - uploaded files appear as `[attachment: filename]` placeholders.
-- **claude.ai only** - ChatGPT, Gemini, and other chatbots are not supported.
+- **One conversation at a time.** Bulk export is not supported.
+- **Markdown only.**
+- **Artifacts are inlined** as fenced code blocks; not written as separate files.
+- **Attachments** appear as `[attachment: filename]` placeholders; their bytes are not downloaded.
+- **`claude.ai` only.** ChatGPT, Gemini, and other chatbots are not supported.
+- **Cache-only.** If the conversation has never been opened in the current browser, the IndexedDB cache will not have it and export will fail with the message above. Open the chat first.
 
-## Roadmap
+## Development
 
-Planned for future versions (not v1):
+```bash
+npm install
+npm run build      # tsc + copy assets into dist/
+npm run watch      # rebuild on change
+npm test           # 41 tests, no browser needed
+npm run pack:store # build + zip dist/ into markhive-<version>.zip
+```
 
-- Claude Code / `claude.com/code` surface support.
-- Bulk export of all conversations.
-- HTML output.
-- In-page injected "Export" button next to the share button.
-- Side-car artifact files and downloaded attachments.
-- Adapters for other chatbots (ChatGPT, Gemini).
-- Org picker UI for multi-org accounts.
-- Page-context fetch fallback (content script) if direct API calls are ever blocked.
+Source layout:
+
+```
+src/
+  background/        (none — popup talks to the page directly)
+  popup/
+    popup.html
+    popup.css
+    popup.ts         vanilla TS, no framework
+  lib/
+    idb-cache.ts     reads the page IndexedDB via executeScript
+    fs-handle.ts     File System Access API wrapper
+    renderer.ts      Conversation -> Markdown
+    filename.ts      buildFilename(conv)
+    slugify.ts       title -> slug
+    settings.ts      chrome.storage.local prefs
+    types.ts         Conversation / ContentBlock / ...
+    url-parse.ts     parseChatId(url)
+    fs-types.d.ts    File System Access typings
+test/                node:test runner, fixtures in test/fixtures/
+scripts/
+  copy-assets.mjs    HTML/CSS/icons/manifest -> dist/
+  pack.mjs           zip dist/ for Web Store
+```
 
 ## Manual test checklist
 
-Run through these scenarios after each build to verify end-to-end behavior:
+Run after each meaningful change:
 
-- [ ] Short text-only conversation, default toggles - confirm frontmatter and headings are present, file downloads with a correct date-slug name.
-- [ ] Long conversation with thinking blocks and tool calls, all toggles on - confirm thinking blockquotes and tool-call/result blocks appear.
-- [ ] Conversation containing an artifact - confirm it renders as an H3 heading followed by a fenced code block with the correct language.
-- [ ] Click the extension while logged out of Claude - confirm a clear toast appears: "You're signed out of Claude. Sign in and retry."
-- [ ] Click the extension on a non-chat tab (e.g. `chrome://newtab`) - confirm the Export button is disabled and the toast reads "Open a Claude conversation to export."
+- [ ] Short text-only chat, default toggles - frontmatter + headings present, file saves with `<date>-<slug>.md`.
+- [ ] Long chat with thinking and tool calls, all toggles on - thinking blockquotes and tool blocks render; fences are not broken by triple-backtick content.
+- [ ] Chat containing an artifact - renders as an H3 followed by a fenced block in the correct language.
+- [ ] Click on a non-chat tab (e.g. `chrome://newtab`) - Generate is disabled, status pill is IDLE, error toast explains why.
+- [ ] Custom save folder via "Choose…" - first save lands in the picked folder; revoke permission via the browser's site settings, then save again - falls back to Downloads with a clear toast and the saved folder reference is cleared.
 
 ## License
 
-MIT License. Copyright 2026 Yevhenii Bilyk.
+MIT. Copyright 2026 Yevhenii Bilyk.

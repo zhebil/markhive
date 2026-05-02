@@ -1,9 +1,6 @@
 import type {
   Conversation,
   ContentBlock,
-  ToolUseBlock,
-  ToolResultBlock,
-  ToolUseArtifactBlock,
   ChatMessage,
 } from "./types.ts";
 
@@ -37,17 +34,23 @@ export function render(conv: Conversation, opts: RenderOptions): string {
 }
 
 function renderFrontmatter(conv: Conversation, opts: RenderOptions): string {
+  // JSON.stringify all interpolated values to prevent newline-injection in YAML.
   return [
     "---",
     `title: ${JSON.stringify(conv.name)}`,
-    `chat_id: ${conv.uuid}`,
-    `url: https://claude.ai/chat/${conv.uuid}`,
-    `model: ${conv.model}`,
-    `created: ${conv.created_at}`,
-    `exported: ${opts.exportedAt}`,
+    `chat_id: ${JSON.stringify(conv.uuid)}`,
+    `url: ${JSON.stringify(`https://claude.ai/chat/${conv.uuid}`)}`,
+    `model: ${JSON.stringify(conv.model)}`,
+    `created: ${JSON.stringify(conv.created_at)}`,
+    `exported: ${JSON.stringify(opts.exportedAt)}`,
     "---",
     "",
   ].join("\n");
+}
+
+function fenceFor(content: string): string {
+  const longest = (content.match(/`+/g) ?? []).reduce((m, s) => Math.max(m, s.length), 0);
+  return "`".repeat(Math.max(3, longest + 1));
 }
 
 function renderMessage(msg: ChatMessage, opts: RenderOptions, toolUseMap: Map<string, string>): string {
@@ -80,8 +83,7 @@ function buildToolUseMap(conv: Conversation): Map<string, string> {
     const content = Array.isArray(msg.content) ? msg.content : [];
     for (const block of content) {
       if (block.type === "tool_use") {
-        const b = block as ToolUseBlock;
-        map.set(b.id, b.name);
+        map.set(block.id, block.name);
       }
     }
   }
@@ -97,22 +99,9 @@ function renderBlock(
   opts: RenderOptions,
   toolUseMap: Map<string, string>
 ): string | null {
-  const b = block as {
-    type: string;
-    text?: string;
-    thinking?: string;
-    id?: string;
-    name?: string;
-    input?: unknown;
-    tool_use_id?: string;
-    content?: Array<{ type: string; text?: string; [k: string]: unknown }>;
-    title?: string;
-    language?: string;
-  };
-
-  switch (b.type) {
+  switch (block.type) {
     case "text": {
-      const text = b.text ?? "";
+      const text = block.text ?? "";
       // The /chat_conversations API substitutes tool_use blocks with a literal
       // placeholder text block. Suppress it to keep exports clean.
       if (text.includes("This block is not supported on your current device yet.")) {
@@ -123,31 +112,36 @@ function renderBlock(
 
     case "thinking": {
       if (!opts.includeThinking) return null;
-      return `> **Thinking**\n${toBlockquote(b.thinking ?? "")}`;
+      return `> **Thinking**\n${toBlockquote(block.thinking ?? "")}`;
     }
 
     case "tool_use": {
       if (!opts.includeToolInputs) return null;
-      const json = toBlockquote(JSON.stringify(b.input, null, 2));
-      return `> **Tool call: ${b.name}**\n> \`\`\`json\n${json}\n> \`\`\``;
+      const inner = JSON.stringify(block.input, null, 2);
+      const fence = fenceFor(inner);
+      const json = toBlockquote(`${fence}json\n${inner}\n${fence}`);
+      return `> **Tool call: ${block.name}**\n${json}`;
     }
 
     case "tool_result": {
       if (!opts.includeToolResults) return null;
-      const toolResultBlock = block as ToolResultBlock;
-      const name = toolUseMap.get(toolResultBlock.tool_use_id) ?? toolResultBlock.tool_use_id;
-      const textParts = toolResultBlock.content
+      const name = toolUseMap.get(block.tool_use_id) ?? block.tool_use_id;
+      const textParts = block.content
         .map((c) => (c.type === "text" ? c.text : JSON.stringify(c)))
         .join("\n");
-      return `> **Tool result: ${name}**\n> \`\`\`\n${toBlockquote(textParts)}\n> \`\`\``;
+      const fence = fenceFor(textParts);
+      const body = toBlockquote(`${fence}\n${textParts}\n${fence}`);
+      return `> **Tool result: ${name}**\n${body}`;
     }
 
     case "tool_use_artifact": {
-      const artBlock = block as ToolUseArtifactBlock;
-      return `### ${artBlock.title}\n\n\`\`\`${artBlock.language}\n${artBlock.content}\n\`\`\``;
+      const fence = fenceFor(block.content);
+      return `### ${block.title}\n\n${fence}${block.language}\n${block.content}\n${fence}`;
     }
 
-    default:
-      return `<!-- unsupported block: ${b.type} -->`;
+    default: {
+      const unknownType = (block as { type: string }).type;
+      return `<!-- unsupported block: ${unknownType} -->`;
+    }
   }
 }
