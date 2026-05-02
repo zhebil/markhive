@@ -30,6 +30,11 @@
         <input type="checkbox" id="opt-tool-results">
         <span>Include tool results</span>
       </label>
+
+      <label class="option-row option-row-text">
+        <span class="option-label">Download subfolder</span>
+        <input type="text" id="opt-subfolder" placeholder="e.g. claude-exports" autocomplete="off" spellcheck="false">
+      </label>
     </div>
 
     <div class="actions">
@@ -37,6 +42,10 @@
     </div>
 
     <div id="preview-region" class="preview-region hidden">
+      <div class="preview-meta">
+        <span id="preview-source" class="preview-source"></span>
+        <button id="btn-regenerate" class="btn-icon" title="Regenerate (re-read conversation)" aria-label="Regenerate">↻</button>
+      </div>
       <textarea id="preview-textarea" spellcheck="false" aria-label="Rendered markdown"></textarea>
       <div class="preview-actions">
         <button id="btn-copy">Copy</button>

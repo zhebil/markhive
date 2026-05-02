@@ -11,15 +11,29 @@ const elFrontmatter = document.getElementById("opt-frontmatter") as HTMLInputEle
 const elThinking = document.getElementById("opt-thinking") as HTMLInputElement;
 const elToolInputs = document.getElementById("opt-tool-inputs") as HTMLInputElement;
 const elToolResults = document.getElementById("opt-tool-results") as HTMLInputElement;
+const elSubfolder = document.getElementById("opt-subfolder") as HTMLInputElement;
 const elGenerate = document.getElementById("btn-generate") as HTMLButtonElement;
 const elPreviewRegion = document.getElementById("preview-region") as HTMLDivElement;
+const elPreviewSource = document.getElementById("preview-source") as HTMLSpanElement;
+const elRegenerate = document.getElementById("btn-regenerate") as HTMLButtonElement;
 const elPreviewTextarea = document.getElementById("preview-textarea") as HTMLTextAreaElement;
 const elCopy = document.getElementById("btn-copy") as HTMLButtonElement;
 const elDownload = document.getElementById("btn-download") as HTMLButtonElement;
 const elToast = document.getElementById("toast") as HTMLDivElement;
 
+const CACHE_KEY = "markhive_last_export";
+
+type CachedExport = {
+  chatId: string;
+  filename: string;
+  markdown: string;
+  source: "cache" | "api";
+  generatedAt: string;
+  chatTitle: string;
+};
+
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
-// Filename derived during Generate; used by Download
+let activeTabId: number | null = null;
 let currentFilename = "export.md";
 
 function showToast(text: string, kind: "info" | "error"): void {
@@ -62,7 +76,42 @@ function mapErrorCode(code: string, status?: number): string {
   }
 }
 
-let activeTabId: number | null = null;
+function sanitizeSubfolder(input: string): string {
+  // Keep it relative under Downloads. Strip leading/trailing slashes,
+  // collapse repeats, drop characters Chrome will reject in filenames.
+  return input
+    .trim()
+    .replace(/[\\:*?"<>|]/g, "")
+    .replace(/\/+/g, "/")
+    .replace(/^\/+|\/+$/g, "");
+}
+
+async function readCachedExport(): Promise<CachedExport | null> {
+  const store = chrome.storage.session ?? chrome.storage.local;
+  return new Promise((resolve) => {
+    store.get(CACHE_KEY, (result) => {
+      resolve((result[CACHE_KEY] as CachedExport | undefined) ?? null);
+    });
+  });
+}
+
+async function writeCachedExport(entry: CachedExport): Promise<void> {
+  const store = chrome.storage.session ?? chrome.storage.local;
+  return new Promise((resolve) => {
+    store.set({ [CACHE_KEY]: entry }, resolve);
+  });
+}
+
+function showPreview(entry: CachedExport): void {
+  elPreviewTextarea.value = entry.markdown;
+  currentFilename = entry.filename;
+  elPreviewSource.textContent = `${entry.source === "cache" ? "from cache" : "from API"} · ${new Date(entry.generatedAt).toLocaleTimeString()}`;
+  if (entry.chatTitle) {
+    elChatTitle.textContent = entry.chatTitle;
+    elChatTitle.title = entry.chatTitle;
+  }
+  elPreviewRegion.classList.remove("hidden");
+}
 
 async function init(): Promise<void> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -80,8 +129,21 @@ async function init(): Promise<void> {
   elThinking.checked = settings.includeThinking;
   elToolInputs.checked = settings.includeToolInputs;
   elToolResults.checked = settings.includeToolResults;
+  elSubfolder.value = settings.downloadSubfolder;
+
+  if (chatId !== null) {
+    const cached = await readCachedExport();
+    if (cached && cached.chatId === chatId) {
+      showPreview(cached);
+    }
+  }
 
   elGenerate.addEventListener("click", () => {
+    if (chatId === null) return;
+    void handleGenerate(chatId);
+  });
+
+  elRegenerate.addEventListener("click", () => {
     if (chatId === null) return;
     void handleGenerate(chatId);
   });
@@ -98,6 +160,7 @@ async function init(): Promise<void> {
 async function handleGenerate(chatId: string): Promise<void> {
   hideToast();
   elGenerate.disabled = true;
+  elRegenerate.disabled = true;
 
   try {
     const settings = {
@@ -106,6 +169,7 @@ async function handleGenerate(chatId: string): Promise<void> {
       includeToolInputs: elToolInputs.checked,
       includeToolResults: elToolResults.checked,
       filenameTemplate: "date-title" as const,
+      downloadSubfolder: sanitizeSubfolder(elSubfolder.value),
     };
 
     await saveSettings(settings);
@@ -152,22 +216,32 @@ async function handleGenerate(chatId: string): Promise<void> {
       exportedAt: new Date().toISOString(),
     };
 
-    if (conv.name) {
-      elChatTitle.textContent = conv.name;
-      elChatTitle.title = conv.name;
+    const markdown = render(conv, opts);
+    const filename = buildFilename(conv);
+    const chatTitle = conv.name ?? "";
+
+    if (chatTitle) {
+      elChatTitle.textContent = chatTitle;
+      elChatTitle.title = chatTitle;
     }
 
-    const markdown = render(conv, opts);
-    currentFilename = buildFilename(conv);
-
-    elPreviewTextarea.value = markdown;
-    elPreviewRegion.classList.remove("hidden");
+    const entry: CachedExport = {
+      chatId,
+      filename,
+      markdown,
+      source,
+      generatedAt: new Date().toISOString(),
+      chatTitle,
+    };
+    await writeCachedExport(entry);
+    showPreview(entry);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("Markhive generate failed:", err);
     showToast(`Couldn't render conversation: ${message}`, "error");
   } finally {
     elGenerate.disabled = false;
+    elRegenerate.disabled = false;
   }
 }
 
@@ -182,12 +256,18 @@ async function handleCopy(): Promise<void> {
 }
 
 function handleDownload(): void {
-  // Read from textarea so any user edits are honored
   const text = elPreviewTextarea.value;
+  const subfolder = sanitizeSubfolder(elSubfolder.value);
+  const filename = subfolder ? `${subfolder}/${currentFilename}` : currentFilename;
   const blob = new Blob([text], { type: "text/markdown" });
   const blobUrl = URL.createObjectURL(blob);
 
-  chrome.downloads.download({ url: blobUrl, filename: currentFilename, saveAs: false }, (downloadId) => {
+  chrome.downloads.download({ url: blobUrl, filename, saveAs: false }, (downloadId) => {
+    if (chrome.runtime.lastError) {
+      URL.revokeObjectURL(blobUrl);
+      showToast(`Download failed: ${chrome.runtime.lastError.message}`, "error");
+      return;
+    }
     const fallbackTimer = setTimeout(() => {
       URL.revokeObjectURL(blobUrl);
       chrome.downloads.onChanged.removeListener(onChanged);

@@ -42,6 +42,9 @@ body {
   background: var(--bg);
   color: var(--text);
   width: 480px;
+  /* Chrome popups cap around 600px tall - allow internal scroll if content exceeds */
+  max-height: 600px;
+  overflow-y: auto;
 }
 
 #app {
@@ -103,6 +106,33 @@ header {
   flex-shrink: 0;
 }
 
+.option-row-text {
+  cursor: default;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.option-label {
+  flex-shrink: 0;
+}
+
+#opt-subfolder {
+  flex: 1;
+  min-width: 140px;
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: 13px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+#opt-subfolder:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
 .actions {
   padding: 10px 16px 12px;
 }
@@ -142,8 +172,8 @@ header {
 
 #preview-textarea {
   width: 100%;
-  height: 360px;
-  max-height: 360px;
+  height: 240px;
+  max-height: 240px;
   padding: 8px 10px;
   font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
   font-size: 12px;
@@ -155,6 +185,41 @@ header {
   color: var(--text);
   box-sizing: border-box;
   overflow-y: auto;
+}
+
+.preview-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.preview-source {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-icon:hover:not(:disabled) {
+  background: var(--bg-header);
+}
+
+.btn-icon:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 #preview-textarea:focus {

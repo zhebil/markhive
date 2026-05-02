@@ -4,6 +4,7 @@ export type Settings = {
   includeToolInputs: boolean;
   includeToolResults: boolean;
   filenameTemplate: "date-title";
+  downloadSubfolder: string;
 };
 
 export const DEFAULTS: Settings = {
@@ -12,6 +13,7 @@ export const DEFAULTS: Settings = {
   includeToolInputs: false,
   includeToolResults: false,
   filenameTemplate: "date-title",
+  downloadSubfolder: "",
 };
 
 const STORAGE_KEY = "markhive";
