@@ -8,54 +8,73 @@
 </head>
 <body>
   <div id="app">
-    <header>
-      <span class="logo">Markhive</span>
-      <span id="chat-title" class="chat-title" title=""></span>
+    <header class="mh-header">
+      <div class="mh-mark" aria-hidden="true">M</div>
+      <div class="mh-titles">
+        <span class="mh-wordmark">Markhive</span>
+        <span class="mh-sep">/</span>
+        <span id="chat-title" class="mh-chat-title" title=""></span>
+      </div>
+      <span id="mh-status" class="mh-status is-off">idle</span>
     </header>
 
-    <div class="options">
-      <label class="option-row">
+    <div id="mh-options" class="mh-options">
+      <label class="mh-toggle">
+        <span class="mh-toggle-text"><span class="lbl">Include frontmatter</span></span>
         <input type="checkbox" id="opt-frontmatter">
-        <span>Include frontmatter</span>
+        <span class="mh-switch" aria-hidden="true"></span>
       </label>
-      <label class="option-row">
+      <label class="mh-toggle">
+        <span class="mh-toggle-text"><span class="lbl">Include thinking</span></span>
         <input type="checkbox" id="opt-thinking">
-        <span>Include thinking</span>
+        <span class="mh-switch" aria-hidden="true"></span>
       </label>
-      <label class="option-row">
+      <label class="mh-toggle">
+        <span class="mh-toggle-text"><span class="lbl">Include tool inputs</span></span>
         <input type="checkbox" id="opt-tool-inputs">
-        <span>Include tool inputs</span>
+        <span class="mh-switch" aria-hidden="true"></span>
       </label>
-      <label class="option-row">
+      <label class="mh-toggle">
+        <span class="mh-toggle-text"><span class="lbl">Include tool results</span></span>
         <input type="checkbox" id="opt-tool-results">
-        <span>Include tool results</span>
+        <span class="mh-switch" aria-hidden="true"></span>
       </label>
+    </div>
 
-      <div class="option-row option-row-text">
-        <span class="option-label">Save to</span>
-        <span id="folder-name" class="folder-name">Downloads (default)</span>
-        <button id="btn-choose-folder" class="btn-mini" type="button">Choose…</button>
-        <button id="btn-reset-folder" class="btn-mini btn-mini-secondary hidden" type="button">Reset</button>
+    <div id="mh-options-summary" class="mh-options-summary hidden">
+      <span class="mh-summary-label">Options</span>
+      <span id="mh-summary-list" class="mh-summary-list"></span>
+      <button id="btn-edit-options" type="button" class="mh-link-btn">Edit</button>
+    </div>
+
+    <div class="mh-saveto">
+      <div class="mh-saveto-info">
+        <span class="mh-saveto-label">Save to</span>
+        <span id="folder-name" class="mh-saveto-path"></span>
+      </div>
+      <div class="mh-saveto-actions">
+        <button id="btn-choose-folder" class="mh-link-btn" type="button">Choose…</button>
+        <button id="btn-reset-folder" class="mh-link-btn is-quiet hidden" type="button">Reset</button>
       </div>
     </div>
 
-    <div class="actions">
-      <button id="btn-generate">Generate</button>
+    <div class="mh-actions">
+      <button id="btn-generate" type="button" class="mh-btn mh-btn-primary">Generate markdown</button>
     </div>
 
-    <div id="preview-region" class="preview-region hidden">
-      <div class="preview-meta">
-        <span id="preview-source" class="preview-source"></span>
-        <button id="btn-regenerate" class="btn-icon" title="Regenerate (re-read conversation)" aria-label="Regenerate">↻</button>
+    <div id="preview-region" class="mh-preview hidden">
+      <div class="mh-preview-meta">
+        <span id="preview-source" class="mh-preview-source"></span>
+        <button id="btn-regenerate" type="button" class="mh-btn-icon" title="Regenerate (re-read conversation)" aria-label="Regenerate">↻</button>
       </div>
-      <textarea id="preview-textarea" spellcheck="false" aria-label="Rendered markdown"></textarea>
-      <div class="preview-actions">
-        <button id="btn-copy">Copy</button>
-        <button id="btn-download">Download</button>
+      <textarea id="preview-textarea" class="mh-textarea" spellcheck="false" aria-label="Rendered markdown"></textarea>
+      <div class="mh-preview-actions">
+        <button id="btn-copy" type="button" class="mh-btn mh-btn-ghost">Copy</button>
+        <button id="btn-download" type="button" class="mh-btn mh-btn-primary">Download</button>
       </div>
     </div>
 
-    <div id="toast" class="toast hidden" role="status"></div>
+    <div id="toast" class="mh-toast hidden" role="status"></div>
   </div>
 
   <script type="module" src="popup.js"></script>

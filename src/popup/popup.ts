@@ -14,10 +14,15 @@ import type { Conversation } from "../lib/types.ts";
 import type { RenderOptions } from "../lib/renderer.ts";
 
 const elChatTitle = document.getElementById("chat-title") as HTMLSpanElement;
+const elStatus = document.getElementById("mh-status") as HTMLSpanElement;
 const elFrontmatter = document.getElementById("opt-frontmatter") as HTMLInputElement;
 const elThinking = document.getElementById("opt-thinking") as HTMLInputElement;
 const elToolInputs = document.getElementById("opt-tool-inputs") as HTMLInputElement;
 const elToolResults = document.getElementById("opt-tool-results") as HTMLInputElement;
+const elOptions = document.getElementById("mh-options") as HTMLDivElement;
+const elOptionsSummary = document.getElementById("mh-options-summary") as HTMLDivElement;
+const elSummaryList = document.getElementById("mh-summary-list") as HTMLSpanElement;
+const elEditOptions = document.getElementById("btn-edit-options") as HTMLButtonElement;
 const elFolderName = document.getElementById("folder-name") as HTMLSpanElement;
 const elChooseFolder = document.getElementById("btn-choose-folder") as HTMLButtonElement;
 const elResetFolder = document.getElementById("btn-reset-folder") as HTMLButtonElement;
@@ -29,6 +34,39 @@ const elPreviewTextarea = document.getElementById("preview-textarea") as HTMLTex
 const elCopy = document.getElementById("btn-copy") as HTMLButtonElement;
 const elDownload = document.getElementById("btn-download") as HTMLButtonElement;
 const elToast = document.getElementById("toast") as HTMLDivElement;
+
+let optsExpanded = false;
+
+const TOGGLE_LABELS: Array<[HTMLInputElement, string]> = [
+  [elFrontmatter, "frontmatter"],
+  [elThinking, "thinking"],
+  [elToolInputs, "tool inputs"],
+  [elToolResults, "tool results"],
+];
+
+function renderOptionsBlock(): void {
+  const previewOpen = !elPreviewRegion.classList.contains("hidden");
+  const showSummary = previewOpen && !optsExpanded;
+  elOptions.classList.toggle("hidden", showSummary);
+  elOptionsSummary.classList.toggle("hidden", !showSummary);
+  if (showSummary) {
+    const active = TOGGLE_LABELS.filter(([el]) => el.checked).map(([, lbl]) => lbl);
+    elSummaryList.textContent = "";
+    if (active.length === 0) {
+      const span = document.createElement("span");
+      span.className = "mh-summary-empty";
+      span.textContent = "none";
+      elSummaryList.appendChild(span);
+    } else {
+      elSummaryList.textContent = active.join(" · ");
+    }
+  }
+}
+
+function setStatus(ready: boolean): void {
+  elStatus.classList.toggle("is-off", !ready);
+  elStatus.textContent = ready ? "ready" : "idle";
+}
 
 const CACHE_KEY = "markhive_last_export";
 
@@ -46,16 +84,33 @@ let activeTabId: number | null = null;
 let currentFilename = "export.md";
 let downloadDir: FileSystemDirectoryHandle | null = null;
 
-function showToast(text: string, kind: "info" | "error"): void {
+function renderToastBody(text: string, filename?: string): void {
+  elToast.textContent = "";
+  const wrap = document.createElement("span");
+  wrap.className = "mh-toast-text";
+  if (filename && text.includes(filename)) {
+    const idx = text.indexOf(filename);
+    wrap.appendChild(document.createTextNode(text.slice(0, idx)));
+    const strong = document.createElement("strong");
+    strong.textContent = filename;
+    wrap.appendChild(strong);
+    wrap.appendChild(document.createTextNode(text.slice(idx + filename.length)));
+  } else {
+    wrap.textContent = text;
+  }
+  elToast.appendChild(wrap);
+}
+
+function showToast(text: string, kind: "info" | "error", filename?: string): void {
   if (toastTimer !== null) {
     clearTimeout(toastTimer);
     toastTimer = null;
   }
-  elToast.textContent = text;
-  elToast.className = `toast ${kind}`;
+  renderToastBody(text, filename);
+  elToast.className = `mh-toast ${kind}`;
   if (kind === "info") {
     toastTimer = setTimeout(() => {
-      elToast.className = "toast hidden";
+      elToast.className = "mh-toast hidden";
       elToast.textContent = "";
       toastTimer = null;
     }, 5000);
@@ -67,7 +122,7 @@ function hideToast(): void {
     clearTimeout(toastTimer);
     toastTimer = null;
   }
-  elToast.className = "toast hidden";
+  elToast.className = "mh-toast hidden";
   elToast.textContent = "";
 }
 
@@ -87,13 +142,22 @@ function mapErrorCode(code: string, status?: number): string {
 }
 
 function updateFolderUi(): void {
+  elFolderName.textContent = "";
   if (downloadDir) {
-    elFolderName.textContent = downloadDir.name;
+    const host = document.createElement("span");
+    host.className = "path-host";
+    host.textContent = downloadDir.name;
+    elFolderName.appendChild(host);
     elFolderName.title = downloadDir.name;
+    elChooseFolder.textContent = "Change…";
     elResetFolder.classList.remove("hidden");
   } else {
-    elFolderName.textContent = "Downloads (default)";
+    const def = document.createElement("span");
+    def.className = "path-default";
+    def.textContent = "Downloads (default)";
+    elFolderName.appendChild(def);
     elFolderName.title = "";
+    elChooseFolder.textContent = "Choose…";
     elResetFolder.classList.add("hidden");
   }
 }
@@ -147,12 +211,25 @@ async function writeCachedExport(entry: CachedExport): Promise<void> {
 function showPreview(entry: CachedExport): void {
   elPreviewTextarea.value = entry.markdown;
   currentFilename = entry.filename;
-  elPreviewSource.textContent = `${entry.source === "cache" ? "from cache" : "from API"} · ${new Date(entry.generatedAt).toLocaleTimeString()}`;
+
+  elPreviewSource.textContent = "";
+  const lbl = document.createElement("span");
+  lbl.className = "src-label";
+  lbl.textContent = entry.source === "cache" ? "from cache" : "fresh export";
+  const time = document.createElement("span");
+  time.className = "src-time";
+  const d = new Date(entry.generatedAt);
+  time.textContent = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  elPreviewSource.appendChild(lbl);
+  elPreviewSource.appendChild(time);
+
   if (entry.chatTitle) {
     elChatTitle.textContent = entry.chatTitle;
     elChatTitle.title = entry.chatTitle;
   }
   elPreviewRegion.classList.remove("hidden");
+  optsExpanded = false;
+  renderOptionsBlock();
 }
 
 async function init(): Promise<void> {
@@ -161,9 +238,17 @@ async function init(): Promise<void> {
   const chatId = parseChatId(url);
   activeTabId = tab?.id ?? null;
 
+  setStatus(chatId !== null);
   if (chatId === null) {
     elGenerate.disabled = true;
-    showToast("Open a Claude conversation to export.", "error");
+    for (const [el] of TOGGLE_LABELS) {
+      el.disabled = true;
+      el.closest(".mh-toggle")?.classList.add("is-disabled");
+    }
+    showToast(
+      "Open a Claude conversation to export. Markhive only runs on claude.ai/chat/* URLs.",
+      "error",
+    );
   }
 
   const settings = await loadSettings();
@@ -211,6 +296,11 @@ async function init(): Promise<void> {
 
   elResetFolder.addEventListener("click", () => {
     void handleResetFolder();
+  });
+
+  elEditOptions.addEventListener("click", () => {
+    optsExpanded = true;
+    renderOptionsBlock();
   });
 }
 
@@ -321,7 +411,8 @@ async function handleDownload(): Promise<void> {
         showToast("Folder permission denied. Falling back to Downloads.", "error");
       } else {
         await writeFileToDirectory(downloadDir, currentFilename, text);
-        showToast(`Saved to ${downloadDir.name}/${currentFilename}.`, "info");
+        const fullName = `${downloadDir.name}/${currentFilename}`;
+        showToast(`Saved to ${fullName}`, "info", fullName);
         return;
       }
     } catch (err) {
