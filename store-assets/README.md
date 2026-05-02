@@ -1,17 +1,13 @@
 # Chrome Web Store assets
 
-Six 1280×800 PNGs ready to upload as listing screenshots. Pick up to 5 (the store's max).
+Five 1280×800 PNGs ready to upload as listing screenshots, in display order.
 
-| File | State | Theme |
-| --- | --- | --- |
-| `01-ready-light.png` | Ready, no preview | Light |
-| `02-preview-light.png` | Preview shown after Generate | Light |
-| `03-preview-dark.png` | Preview shown after Generate | Dark |
-| `04-idle-toast-light.png` | Idle / non-chat URL with error toast | Light |
-| `05-idle-toast-dark.png` | Idle / non-chat URL with error toast | Dark |
-| `06-ready-dark.png` | Ready, no preview | Dark |
+| # | File | Headline | Theme |
+| --- | --- | --- | --- |
+| 1 | `01-hero-preview-light.png` | Your Claude chats, as Markdown. | Light |
+| 2 | `02-ready-light.png` | Pick what to keep. | Light |
+| 3 | `03-preview-dark.png` | Light or dark. | Dark |
+| 4 | `04-error-toast.png` | Knows when to stay quiet. | Light |
+| 5 | `05-folder-picker.png` | Saves where you tell it. | Light |
 
-**Recommended upload order** for the listing (5 of 6):
-`02 → 01 → 03 → 04 → 05`. Hero shot first (preview light), then ready light, then dark preview to prove dark mode, then both toast variants.
-
-The store icon is `icons/128.png` in the repo root - no separate asset needed.
+Upload these in order in the Chrome Web Store dev console. The store icon is `icons/128.png` in the repo root - no separate asset needed.
