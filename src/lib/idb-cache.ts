@@ -3,15 +3,40 @@
 // streamed payloads (with real tool_use / tool_result blocks), unlike the
 // REST endpoint which substitutes tool blocks with a placeholder text.
 
-type ReactQueryCache = {
+export type ReactQueryCache = {
   clientState?: {
     queries?: Array<{ queryKey?: unknown; state?: { data?: unknown } }>;
   };
 };
 
-// This function runs in the page's isolated world via chrome.scripting.executeScript.
-// It must be self-contained: no closures, no imports, JSON-serializable args/return.
-function readConversationFromCacheInPage(chatId: string): Promise<unknown> {
+// Finds the conversation object inside the react-query cache by walking each
+// query's data (depth-bounded) for an object with `uuid === chatId` and an
+// array `chat_messages`. The queryKey is intentionally ignored so changes to
+// its shape don't break us; rename of either field gives a loud null.
+export function findConversationInCache(cache: ReactQueryCache | undefined, chatId: string): unknown | null {
+  const walk = (node: unknown, depth: number): unknown | null => {
+    if (depth > 4 || node === null || typeof node !== "object") return null;
+    const obj = node as Record<string, unknown>;
+    if (obj["uuid"] === chatId && Array.isArray(obj["chat_messages"])) return obj;
+    const children = Array.isArray(node) ? node : Object.values(obj);
+    for (const child of children) {
+      const found = walk(child, depth + 1);
+      if (found !== null) return found;
+    }
+    return null;
+  };
+
+  for (const q of cache?.clientState?.queries ?? []) {
+    const found = walk(q.state?.data, 0);
+    if (found !== null) return found;
+  }
+  return null;
+}
+
+// Runs in the page's isolated world via chrome.scripting.executeScript. Must
+// be self-contained (no closures, no imports). Returns the raw cache blob and
+// lets the caller do the matching, so we don't duplicate logic across realms.
+function readReactQueryCacheInPage(): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const open = indexedDB.open("keyval-store");
     open.onerror = () => reject(new Error("Failed to open keyval-store"));
@@ -31,17 +56,7 @@ function readConversationFromCacheInPage(chatId: string): Promise<unknown> {
       };
       req.onsuccess = () => {
         db.close();
-        const cache = req.result as ReactQueryCache | undefined;
-        const queries = cache?.clientState?.queries ?? [];
-        const matches = queries.filter((q) => {
-          const qk = q.queryKey;
-          return Array.isArray(qk) && qk.includes(chatId);
-        });
-        const best = matches.find((q) => {
-          const d = q.state?.data as { chat_messages?: unknown } | undefined;
-          return d && Array.isArray(d.chat_messages);
-        });
-        resolve(best?.state?.data ?? null);
+        resolve(req.result ?? null);
       };
     };
   });
@@ -51,8 +66,7 @@ export async function fetchConversationFromCache(tabId: number, chatId: string):
   const results = await chrome.scripting.executeScript({
     target: { tabId },
     world: "ISOLATED",
-    func: readConversationFromCacheInPage,
-    args: [chatId],
+    func: readReactQueryCacheInPage,
   });
-  return results[0]?.result ?? null;
+  return findConversationInCache(results[0]?.result as ReactQueryCache | undefined, chatId);
 }
