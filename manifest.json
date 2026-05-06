@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Markhive",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Export the open Claude.ai conversation to a Markdown file. Local only, no servers, no telemetry.",
   "permissions": ["storage", "downloads", "activeTab", "scripting"],
   "action": { "default_popup": "popup/popup.html", "default_title": "Markhive" },
